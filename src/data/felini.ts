@@ -1,0 +1,25 @@
+// Felini Complete — analytické složky dle výrobce
+// Ca 19.3%, P 3.0%, Mg 0.8%, Na 11.0%
+export const FELINI_PER_G = {
+  calcium_mg:   193.0,
+  phosphorus_mg: 30.0,
+  magnesium_mg:   8.0,
+  sodium_mg:    110.0,
+  taurin_mg:    100.0,
+  vitA_IU:      800.0,
+  vitD3_IU:      20.0,
+  vitE_mg:        5.5,
+  vitB1_mg:       0.32,
+  vitB2_mg:       0.16,
+  vitB6_mg:       0.24,
+  vitB12_mcg:     1.65,
+  pantoB5_mg:     0.72,
+  biotin_mcg:    10.0,
+  niacin_mg:      1.3,
+  folate_mg:      0.052,
+  iron_mg:        0.482,
+  copper_mg:      0.041,
+  manganese_mg:   0.073,
+  zinc_mg:        0.205,
+  iodine_mg:      0.027,
+};
