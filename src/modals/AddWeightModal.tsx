@@ -7,14 +7,16 @@ interface AddWeightModalProps {
 
 export function AddWeightModal({ onClose }: AddWeightModalProps) {
   const addWeight = useWeightsStore(s => s.addWeight);
+  const today = new Date().toISOString().slice(0, 10);
   const [kg, setKg] = useState('');
+  const [date, setDate] = useState(today);
   const [note, setNote] = useState('');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const val = parseFloat(kg);
     if (!val || val <= 0) return;
-    addWeight(val, note.trim() || undefined);
+    addWeight(val, note.trim() || undefined, date || undefined);
     onClose();
   }
 
@@ -27,11 +29,18 @@ export function AddWeightModal({ onClose }: AddWeightModalProps) {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-            <div className="form-group">
-              <label>Hmotnost (kg)</label>
-              <input type="number" step="0.01" min="0.1" max="15"
-                value={kg} onChange={e => setKg(e.target.value)}
-                placeholder="např. 1.80" autoFocus required />
+            <div className="form-row">
+              <div className="form-group">
+                <label>Hmotnost (kg)</label>
+                <input type="number" step="0.01" min="0.1" max="15"
+                  value={kg} onChange={e => setKg(e.target.value)}
+                  placeholder="např. 1.80" autoFocus required />
+              </div>
+              <div className="form-group">
+                <label>Datum</label>
+                <input type="date" max={today}
+                  value={date} onChange={e => setDate(e.target.value)} />
+              </div>
             </div>
             <div className="form-group">
               <label>Poznámka (volitelné)</label>

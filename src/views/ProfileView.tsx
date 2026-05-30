@@ -4,6 +4,7 @@ import { useHealthStore } from '../store/health';
 import { getEnergy } from '../utils/energy';
 import { BOB } from '../types';
 import { WeightChart } from '../components/WeightChart';
+import { RemindersSettings } from '../components/RemindersSettings';
 import type { HealthRecord } from '../types';
 
 interface ProfileViewProps {
@@ -159,38 +160,7 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
         </>
       )}
 
-      {activeSection === 'reminders' && (
-        <div className="card">
-          <div className="section-title" style={{ marginBottom: 10 }}>Připomínky krmení</div>
-          <p className="help-text" style={{ marginBottom: 12 }}>
-            Pro push notifikace musíte mít povolené notifikace v prohlížeči.
-          </p>
-          {[
-            { id: 'morning', label: '🌅 Ranní krmení', time: '08:00' },
-            { id: 'evening', label: '🌙 Večerní krmení', time: '18:00' },
-            { id: 'felini',  label: '💊 Felini dávka',  time: '12:00' },
-          ].map(r => (
-            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{r.label}</div>
-                <div className="help-text">{r.time}</div>
-              </div>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                data-testid={`reminder-${r.id}-toggle`}
-                onClick={() => {
-                  if (Notification && Notification.permission === 'default') {
-                    Notification.requestPermission().catch(() => undefined);
-                  }
-                }}
-              >
-                Aktivovat
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      {activeSection === 'reminders' && <RemindersSettings />}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import type { WeightEntry } from '../types';
 
 interface WeightsStore {
   weights: WeightEntry[];
-  addWeight: (kg: number, note?: string) => void;
+  addWeight: (kg: number, note?: string, date?: string) => void;
   removeWeight: (id: string) => void;
   latestWeight: number | null;
 }
@@ -13,10 +13,10 @@ export const useWeightsStore = create<WeightsStore>()(
   persist(
     (set, get) => ({
       weights: [],
-      addWeight: (kg, note) => {
+      addWeight: (kg, note, date) => {
         const entry: WeightEntry = {
           id: crypto.randomUUID(),
-          date: new Date().toISOString().slice(0, 10),
+          date: date || new Date().toISOString().slice(0, 10),
           kg,
           note,
         };

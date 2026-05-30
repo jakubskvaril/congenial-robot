@@ -1,26 +1,20 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import Anthropic from '@anthropic-ai/sdk';
-
+// Vercel Edge Function — analýza produktu z URL pomocí Claude API.
+// Žádný API klíč v kódu! Používá process.env.ANTHROPIC_API_KEY (Vercel env var).
 export const config = { runtime: 'edge' };
 
-const client = new Anthropic();
+interface AnalyzeRequest {
+  url?: string;
+}
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Method not allowed' });
-  }
+function json(obj: unknown, status: number): Response {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+  });
+}
 
-  const { url } = req.body as { url?: string };
-  if (!url || typeof url !== 'string') {
-    return res.status(400).json({ ok: false, error: 'Missing url' });
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ ok: false, error: 'API klíč není nastaven ve Vercelu' });
-  }
-
-  const prompt = `Jsi výživový poradce pro kočky. Analyzuj produkt z tohoto URL a vrať JSON (bez markdown bloků):
+const PROMPT_TEMPLATE = (url: string) =>
+  `Jsi výživový poradce pro kočky. Na základě tohoto odkazu na produkt (kapsička/konzerva pro kočky) vrať POUZE platný JSON bez markdown bloků a bez komentářů:
 {
   "name": "název produktu",
   "brand": "výrobce",
@@ -37,33 +31,88 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   },
   "kcalPer100g": číslo,
   "score": číslo 1-10,
-  "notes": "krátké zdůvodnění skóre"
+  "notes": "krátké zdůvodnění skóre v češtině"
 }
 
-Pravidla pro skóre:
+Pravidla pro skóre (1–10):
 - Maso jako první ingredience: +2
 - Obsah masa ≥ 60 %: +2
 - Bez obilovin: +1
 - Kompletní krmivo: +1
 - Vlhkost ≥ 75 %: +1
-- Odečíst za obiloviny, cukr, konzervanty
+- Odečti body za obiloviny, cukr, umělé konzervanty
+
+Pokud konkrétní hodnoty neznáš, odhadni je realisticky podle názvu a typu produktu.
 
 URL produktu: ${url}`;
 
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return json({ ok: false, error: 'Method not allowed' }, 405);
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return json({ ok: false, error: 'API klíč není nastaven ve Vercelu (ANTHROPIC_API_KEY)' }, 500);
+  }
+
+  let body: AnalyzeRequest;
   try {
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      messages: [{ role: 'user', content: prompt }],
+    body = (await req.json()) as AnalyzeRequest;
+  } catch {
+    return json({ ok: false, error: 'Neplatný JSON v požadavku' }, 400);
+  }
+
+  const url = body.url?.trim();
+  if (!url) {
+    return json({ ok: false, error: 'Chybí URL produktu' }, 400);
+  }
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        messages: [{ role: 'user', content: PROMPT_TEMPLATE(url) }],
+      }),
     });
 
-    const text = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStr = text.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    const data = JSON.parse(jsonStr) as Record<string, unknown>;
+    if (!res.ok) {
+      const errText = await res.text();
+      return json(
+        { ok: false, error: `Anthropic API chyba (${res.status}): ${errText.slice(0, 200)}` },
+        502
+      );
+    }
 
-    return res.status(200).json({ ok: true, data });
+    const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
+    const text = (data.content?.find(c => c.type === 'text')?.text ?? '').trim();
+    if (!text) {
+      return json({ ok: false, error: 'Prázdná odpověď z API' }, 502);
+    }
+
+    // Odstraň případné ```json … ``` obaly
+    const jsonStr = text
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      return json({ ok: false, error: 'Odpověď nešlo zpracovat jako JSON' }, 502);
+    }
+
+    return json({ ok: true, data: parsed }, 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Neznámá chyba';
-    return res.status(500).json({ ok: false, error: msg });
+    return json({ ok: false, error: msg }, 500);
   }
 }

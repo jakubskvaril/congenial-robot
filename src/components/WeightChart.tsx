@@ -42,7 +42,14 @@ export function WeightChart({ weights }: WeightChartProps) {
       <ResponsiveContainer width="100%" height={250}>
         <ComposedChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis dataKey="months" tick={{ fontSize: 10 }} label={{ value: 'věk (měs.)', position: 'insideBottom', offset: -2, fontSize: 10 }} />
+          <XAxis
+            dataKey="months"
+            type="number"
+            domain={[0, 36]}
+            ticks={[0, 6, 12, 18, 24, 30, 36]}
+            tick={{ fontSize: 10 }}
+            label={{ value: 'věk (měs.)', position: 'insideBottom', offset: -2, fontSize: 10 }}
+          />
           <YAxis tick={{ fontSize: 10 }} unit=" kg" />
           <Tooltip formatter={(v: number) => `${v} kg`} labelFormatter={(l: number) => `${l} měs.`} />
           <Legend />
