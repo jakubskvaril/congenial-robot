@@ -31,11 +31,25 @@ export function parseOpenFoodFacts(data: unknown): PouchDraft | null {
 }
 
 export async function lookupBarcode(ean: string): Promise<PouchDraft | null> {
+  // 1) Open Pet Food Facts — databáze krmiv pro zvířata
+  try {
+    const res = await fetch(`https://world.openpetfoodfacts.org/api/v0/product/${ean}.json`);
+    if (res.ok) {
+      const data = await res.json() as unknown;
+      const result = parseOpenFoodFacts(data);
+      if (result) return result;
+    }
+  } catch { /* síťová chyba, zkus dál */ }
+
+  // 2) Open Food Facts — obecná databáze (záloha)
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${ean}.json`);
-    const data = await res.json() as unknown;
-    return parseOpenFoodFacts(data);
-  } catch {
-    return null;
-  }
+    if (res.ok) {
+      const data = await res.json() as unknown;
+      const result = parseOpenFoodFacts(data);
+      if (result) return result;
+    }
+  } catch { /* síťová chyba */ }
+
+  return null;
 }

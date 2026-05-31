@@ -32,13 +32,13 @@ export function AddPouchModal({ onClose }: { onClose: () => void }) {
     setState('result');
   }
 
-  async function handleBarcodeScan(ean: string) {
+  async function handleBarcodeScan(code: string) {
     setState('loading');
-    const result = await lookupBarcode(ean);
+    const result = await lookupBarcode(code);
     if (result) {
       applyDraft(result);
     } else {
-      setError(`EAN ${ean} nenalezen v databázi`);
+      setError(`EAN ${code} nenalezen v databázích krmiv. Zkuste záložku 🔗 URL nebo ✏️ Ručně.`);
       setState('error');
     }
   }
@@ -50,7 +50,7 @@ export function AddPouchModal({ onClose }: { onClose: () => void }) {
     if (result) {
       applyDraft(result);
     } else {
-      setError(`EAN ${ean} nenalezen`);
+      setError(`EAN ${ean.trim()} nenalezen. Zkuste záložku 🔗 URL nebo ✏️ Ručně.`);
       setState('error');
     }
   }
