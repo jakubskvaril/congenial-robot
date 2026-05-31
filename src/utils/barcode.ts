@@ -58,15 +58,33 @@ export function parseOffAsMeat(data: unknown): MeatDraft | null {
   };
 }
 
+/**
+ * Vrátí true pokud EAN je interní kód obchodu (proměnlivá váha).
+ * V ČR i EU: prefix "20"–"29" = internal variable-weight codes.
+ * Tyto kódy NEJSOU v žádné globální databázi.
+ */
+export function isStoreInternalEan(ean: string): boolean {
+  if (ean.length !== 13) return false;
+  const prefix = parseInt(ean.substring(0, 2), 10);
+  return prefix >= 20 && prefix <= 29;
+}
+
 /** Hledá EAN jako maso v Open Food Facts (ne pet food). */
 export async function lookupEanAsMeat(ean: string): Promise<MeatDraft | null> {
-  try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${ean}.json`);
-    if (!res.ok) return null;
-    return parseOffAsMeat(await res.json() as unknown);
-  } catch {
-    return null;
+  if (isStoreInternalEan(ean)) return null; // interní kód obchodu, neposílej požadavek
+
+  for (const base of [
+    'https://world.openfoodfacts.org',
+    'https://cz.openfoodfacts.org',
+  ]) {
+    try {
+      const res = await fetch(`${base}/api/v0/product/${ean}.json`);
+      if (!res.ok) continue;
+      const result = parseOffAsMeat(await res.json() as unknown);
+      if (result) return result;
+    } catch { /* síťová chyba, zkus dál */ }
   }
+  return null;
 }
 
 /** Najde nejpodobnější maso z vestavěné databáze pro návrh hodnot Ca/P. */

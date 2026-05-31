@@ -7,7 +7,8 @@ import { MEATS } from '../data/meats';
 import { logMeat, logPouch, logFelini } from '../utils/nutrients';
 import { calcFeliniDose } from '../utils/felini';
 import { BarcodeScanner } from '../components/BarcodeScanner';
-import { lookupEanAsMeat, suggestSimilarMeat, type MeatDraft } from '../utils/barcode';
+import { lookupEanAsMeat, isStoreInternalEan, suggestSimilarMeat, type MeatDraft } from '../utils/barcode';
+import { CZECH_MEAT_PRESETS } from '../data/meatPresets';
 
 type Mode = 'meat' | 'pouch' | 'felini';
 type ScanState = 'idle' | 'scanning' | 'loading' | 'form';
@@ -38,6 +39,7 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
   // ── EAN scan sub-state ───────────────────────────────────────────────
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [scanError, setScanError] = useState('');
+  const [showPresets, setShowPresets] = useState(false);
   const [saveCustom, setSaveCustom] = useState(true);
 
   // Editable draft fields (filled from OFF after scan)
@@ -98,13 +100,24 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
   async function handleEanScanned(ean: string) {
     setScanState('loading');
     setScanError('');
+    setShowPresets(false);
+
+    if (isStoreInternalEan(ean)) {
+      // Interní kód obchodu (proměnlivá váha, začíná 20–29) — není v žádné DB
+      applyDraft({ name: '', kcal: 0, protein: 0, fat: 0, ca_mg: 0, p_mg: 0, taurin_mg: 50, vitA_IU: 0, vitD3_IU: 0, iron_mg: 0, zinc_mg: 0 });
+      setScanError(`Kód ${ean} je interní kód obchodu (čerstvé maso, váhová etiketa) — vyberte druh masa níže:`);
+      setShowPresets(true);
+      setScanState('form');
+      return;
+    }
+
     const draft = await lookupEanAsMeat(ean);
     if (draft) {
       applyDraft(draft);
     } else {
-      // Produkt nenalezen → předvyplň jen název (prázdný) a nech uživatele vyplnit
       applyDraft({ name: '', kcal: 0, protein: 0, fat: 0, ca_mg: 0, p_mg: 0, taurin_mg: 50, vitA_IU: 0, vitD3_IU: 0, iron_mg: 0, zinc_mg: 0 });
-      setScanError(`EAN ${ean} nenalezen v Open Food Facts — vyplňte ručně.`);
+      setScanError(`EAN ${ean} nenalezen v databázi — vyberte druh masa nebo vyplňte ručně:`);
+      setShowPresets(true);
       setScanState('form');
     }
   }
@@ -182,7 +195,7 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
           {(['meat', 'pouch', 'felini'] as Mode[]).map(m => (
             <button key={m} type="button"
-              onClick={() => { setMode(m); setScanState('idle'); }}
+              onClick={() => { setMode(m); setScanState('idle'); setShowPresets(false); setScanError(''); }}
               style={{
                 flex: 1, padding: '10px', border: 'none', background: 'transparent',
                 borderBottom: mode === m ? '3px solid var(--gold)' : '3px solid transparent',
@@ -226,6 +239,32 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
                 </div>
 
                 {scanError && <p className="error-text" style={{ fontSize: '0.78rem' }}>{scanError}</p>}
+
+                {showPresets && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {CZECH_MEAT_PRESETS.map(preset => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          padding: '5px 10px', borderRadius: 20,
+                          border: '1px solid var(--border)',
+                          background: 'var(--surface)', cursor: 'pointer',
+                          fontSize: '0.78rem', fontFamily: 'inherit',
+                          color: 'var(--text)',
+                        }}
+                        onClick={() => {
+                          applyDraft(preset);
+                          setShowPresets(false);
+                          setScanError('');
+                        }}
+                      >
+                        {preset.emoji} {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {similarHint && (
                   <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', fontSize: '0.78rem' }}>
@@ -375,13 +414,25 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
                   </select>
                 </div>
 
-                {/* EAN scan button */}
-                <button type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{ width: '100%', borderStyle: 'dashed', borderWidth: 1, borderColor: 'var(--gold)', color: 'var(--gold)' }}
-                  onClick={() => setScanState('scanning')}>
-                  📷 Přidat maso ze skeneru EAN
-                </button>
+                {/* EAN scan + manual buttons */}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ flex: 1, borderStyle: 'dashed', borderWidth: 1, borderColor: 'var(--gold)', color: 'var(--gold)' }}
+                    onClick={() => setScanState('scanning')}>
+                    📷 Skenovat EAN
+                  </button>
+                  <button type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ flex: 1, borderStyle: 'dashed', borderWidth: 1, borderColor: 'var(--border)' }}
+                    onClick={() => {
+                      setShowPresets(true);
+                      setScanError('Vyberte druh masa:');
+                      applyDraft({ name: '', kcal: 0, protein: 0, fat: 0, ca_mg: 0, p_mg: 0, taurin_mg: 50, vitA_IU: 0, vitD3_IU: 0, iron_mg: 0, zinc_mg: 0 });
+                    }}>
+                    + Přidat maso ručně
+                  </button>
+                </div>
 
                 <div className="form-row">
                   <div className="form-group">
