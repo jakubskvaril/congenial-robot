@@ -61,6 +61,8 @@ export interface PouchNutrients {
   vitaminE?: number;
 }
 
+export interface PouchDraft extends Omit<Pouch, 'id' | 'stockCount'> {}
+
 export interface Pouch {
   id: string;
   name: string;

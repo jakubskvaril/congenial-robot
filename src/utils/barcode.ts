@@ -1,6 +1,20 @@
-import type { Pouch } from '../types';
+import type { PouchDraft } from '../types';
 
-export interface PouchDraft extends Omit<Pouch, 'id' | 'stockCount'> {}
+export type { PouchDraft };
+
+// Lokální databáze — generovaná scriptem scripts/scrape-granulka.mjs
+// Soubor neexistuje dokud scraper nespustíš; import je dynamický aby build nepadal
+let _localDb: Record<string, PouchDraft> | null = null;
+async function getLocalDb(): Promise<Record<string, PouchDraft>> {
+  if (_localDb) return _localDb;
+  try {
+    const mod = await import('../data/localEanDb') as { LOCAL_EAN_DB: Record<string, PouchDraft> };
+    _localDb = mod.LOCAL_EAN_DB;
+  } catch {
+    _localDb = {};
+  }
+  return _localDb;
+}
 
 export function parseOpenFoodFacts(data: unknown): PouchDraft | null {
   if (!data || typeof data !== 'object') return null;
@@ -31,6 +45,10 @@ export function parseOpenFoodFacts(data: unknown): PouchDraft | null {
 }
 
 export async function lookupBarcode(ean: string): Promise<PouchDraft | null> {
+  // 0) Lokální databáze ze scraperu (nejrychlejší, offline)
+  const local = await getLocalDb();
+  if (local[ean]) return local[ean];
+
   // 1) Open Pet Food Facts — databáze krmiv pro zvířata
   try {
     const res = await fetch(`https://world.openpetfoodfacts.org/api/v0/product/${ean}.json`);
