@@ -1,0 +1,43 @@
+{
+  "name": "Bobův gurmánský deníček",
+  "short_name": "Bob Deníček",
+  "description": "Deník výživy Neva Masquerade kocoura Boba — sledování masa, kapsiček a Felini dávek",
+  "theme_color": "#1a1612",
+  "background_color": "#1a1612",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "cs",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Přidat krmení",
+      "short_name": "Přidat",
+      "description": "Rychle přidat jídlo do deníku",
+      "url": "/?action=add",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["health", "lifestyle"],
+  "screenshots": []
+}

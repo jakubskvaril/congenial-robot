@@ -5,12 +5,15 @@ import { BottomNav } from './components/BottomNav';
 import { DiaryView } from './views/DiaryView';
 import { PouchesView } from './views/PouchesView';
 import { AddWeightModal } from './modals/AddWeightModal';
+import { LoginScreen } from './components/LoginScreen';
+import { SyncStatus } from './components/SyncStatus';
 import { useWeightsStore } from './store/weights';
+import { useAuthStore } from './lib/auth';
+import { supabase } from './lib/supabase';
 import { getEnergy } from './utils/energy';
 
-// Grafové záložky (recharts) se načtou až při otevření — rychlejší úvodní načtení
 const AnalyticsView = lazy(() => import('./views/AnalyticsView').then(m => ({ default: m.AnalyticsView })));
-const ProfileView = lazy(() => import('./views/ProfileView').then(m => ({ default: m.ProfileView })));
+const ProfileView   = lazy(() => import('./views/ProfileView').then(m => ({ default: m.ProfileView })));
 
 export function App() {
   const [tab, setTab] = useState<TabId>('diary');
@@ -19,12 +22,21 @@ export function App() {
   const latestWeight = weights.length > 0 ? weights[weights.length - 1].kg : null;
   const energy = getEnergy(latestWeight ?? 1.5);
 
+  const session = useAuthStore(s => s.session);
+  const authLoading = useAuthStore(s => s.loading);
+
+  // Supabase je nakonfigurován ALE uživatel není přihlášen → ukáž login
+  if (supabase && !authLoading && !session) {
+    return <LoginScreen />;
+  }
+
   return (
     <div className="app">
       <BobHeader
         energy={energy}
         latestWeight={latestWeight}
         onAddWeight={() => setWeightModalOpen(true)}
+        syncStatus={<SyncStatus />}
       />
       <main className="main-content">
         {tab === 'diary'     && <DiaryView energy={energy} />}

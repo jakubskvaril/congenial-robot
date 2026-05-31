@@ -1,12 +1,14 @@
 import type { EnergyResult } from '../types';
+import type { ReactNode } from 'react';
 
 interface BobHeaderProps {
   energy: EnergyResult;
   latestWeight: number | null;
   onAddWeight: () => void;
+  syncStatus?: ReactNode;
 }
 
-export function BobHeader({ energy, latestWeight, onAddWeight }: BobHeaderProps) {
+export function BobHeader({ energy, latestWeight, onAddWeight, syncStatus }: BobHeaderProps) {
   return (
     <header className="bob-header">
       <svg className="bob-avatar" viewBox="0 0 40 40" aria-label="Bob">
@@ -38,9 +40,10 @@ export function BobHeader({ energy, latestWeight, onAddWeight }: BobHeaderProps)
           {latestWeight ? ` · ${latestWeight} kg` : ''}
         </div>
       </div>
-      <button className="bob-weight-btn" onClick={onAddWeight}>
-        ⚖️ Váha
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+        <button className="bob-weight-btn" onClick={onAddWeight}>⚖️ Váha</button>
+        {syncStatus}
+      </div>
     </header>
   );
 }
