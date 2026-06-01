@@ -5,6 +5,7 @@ import { getEnergy } from '../utils/energy';
 import { BOB } from '../types';
 import { WeightChart } from '../components/WeightChart';
 import { RemindersSettings } from '../components/RemindersSettings';
+import { PetSharing } from '../components/PetSharing';
 import type { HealthRecord } from '../types';
 
 interface ProfileViewProps {
@@ -17,7 +18,7 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
   const records = useHealthStore(s => s.records);
   const addRecord = useHealthStore(s => s.addRecord);
   const removeRecord = useHealthStore(s => s.removeRecord);
-  const [activeSection, setActiveSection] = useState<'weight' | 'health' | 'reminders'>('weight');
+  const [activeSection, setActiveSection] = useState<'weight' | 'health' | 'reminders' | 'sharing'>('weight');
   const [healthType, setHealthType] = useState<HealthRecord['type']>('vet');
   const [healthDesc, setHealthDesc] = useState('');
   const [healthDate, setHealthDate] = useState(new Date().toISOString().slice(0, 10));
@@ -69,17 +70,17 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
 
       {/* Section tabs */}
       <div style={{ display: 'flex', gap: 0, background: 'var(--surface)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
-        {(['weight', 'health', 'reminders'] as const).map(s => (
+        {(['weight', 'health', 'reminders', 'sharing'] as const).map(s => (
           <button key={s} type="button"
             onClick={() => setActiveSection(s)}
             style={{
               flex: 1, padding: '10px 4px', border: 'none',
               background: activeSection === s ? 'var(--primary)' : 'transparent',
               color: activeSection === s ? 'white' : 'var(--muted)',
-              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.75rem',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem',
             }}
           >
-            {s === 'weight' ? '⚖️ Váha' : s === 'health' ? '🏥 Zdraví' : '🔔 Připomínky'}
+            {s === 'weight' ? '⚖️ Váha' : s === 'health' ? '🏥 Zdraví' : s === 'reminders' ? '🔔 Alarm' : '☁️ Sync'}
           </button>
         ))}
       </div>
@@ -161,6 +162,7 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
       )}
 
       {activeSection === 'reminders' && <RemindersSettings />}
+      {activeSection === 'sharing' && <PetSharing />}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { useAuthStore } from './auth';
 
 let _pendingSync: Record<string, unknown> = {};
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -7,16 +8,13 @@ let _online = navigator.onLine;
 window.addEventListener('online',  () => { _online = true;  flushPending(); });
 window.addEventListener('offline', () => { _online = false; });
 
-async function getUserId(): Promise<string | null> {
-  if (!supabase) return null;
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user.id ?? null;
+function getEffectiveUserId(): string | null {
+  return useAuthStore.getState().effectiveUserId;
 }
 
-/** Načte jeden store ze Supabase. Vrátí null pokud offline nebo SB nenastaveno. */
 export async function pullStore<T>(key: string): Promise<T | null> {
   if (!supabase || !_online) return null;
-  const userId = await getUserId();
+  const userId = getEffectiveUserId();
   if (!userId) return null;
   try {
     const { data, error } = await supabase
@@ -32,7 +30,6 @@ export async function pullStore<T>(key: string): Promise<T | null> {
   }
 }
 
-/** Zapíše store do Supabase (debounced 800ms, buffered pokud offline). */
 export function pushStore(key: string, value: unknown): void {
   _pendingSync[key] = value;
   if (!_online) return;
@@ -42,7 +39,7 @@ export function pushStore(key: string, value: unknown): void {
 
 async function flushPending() {
   if (!supabase || !_online) return;
-  const userId = await getUserId();
+  const userId = getEffectiveUserId();
   if (!userId) return;
 
   const entries = Object.entries(_pendingSync);
@@ -57,6 +54,6 @@ async function flushPending() {
         data,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key,user_id' });
-    } catch { /* data jsou v localStorage, zkusíme příště */ }
+    } catch { /* data jsou v localStorage */ }
   }
 }
