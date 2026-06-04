@@ -4,7 +4,14 @@ const url = import.meta.env.VITE_SUPABASE_URL as string;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 // Vrátí null pokud Supabase není nakonfigurován (app funguje i bez něj)
-export const supabase = url && key ? createClient(url, key) : null;
+export const supabase = url && key ? createClient(url, key, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'bob_auth_session',
+  },
+}) : null;
 
 export type Database = {
   public: {
