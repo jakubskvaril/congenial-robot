@@ -12,10 +12,10 @@ export function AnalyticsView() {
     const counts: Record<string, number> = { meat: 0, pouch: 0, felini: 0, other: 0 };
     for (const e of allEntries) counts[e.type] = (counts[e.type] ?? 0) + e.grams;
     return [
-      { name: '🥩 Maso', value: counts.meat, color: '#a07828' },
-      { name: '🥫 Kapsičky', value: counts.pouch, color: '#2d8a4e' },
-      { name: '💊 Felini', value: counts.felini, color: '#2a7ab8' },
-      { name: 'Ostatní', value: counts.other, color: '#8a7f72' },
+      { name: '🥩 Maso', value: counts.meat, color: '#B8922A' },
+      { name: '🥫 Kapsičky', value: counts.pouch, color: '#15803D' },
+      { name: '💊 Felini', value: counts.felini, color: '#1D4ED8' },
+      { name: 'Ostatní', value: counts.other, color: '#A8A29E' },
     ].filter(d => d.value > 0);
   }, [logs]);
 
@@ -80,7 +80,7 @@ export function AnalyticsView() {
               <XAxis dataKey="month" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} />
               <Tooltip />
-              <Bar dataKey="avgKcal" fill="#a07828" radius={[4,4,0,0]} name="Průměr kcal/den" />
+              <Bar dataKey="avgKcal" fill="#111110" radius={[6,6,0,0]} name="Průměr kcal/den" />
             </BarChart>
           </ResponsiveContainer>
         </div>

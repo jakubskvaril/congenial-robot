@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LogEntry } from '../types';
+import { todayISO } from '../utils/nutrients';
 
 interface LogsStore {
   logs: Record<string, LogEntry[]>;
@@ -44,7 +45,7 @@ export function removeLogItem(logs: LogEntry[], id: string): LogEntry[] {
 export function addLogEntry(partial: Partial<LogEntry>): LogEntry {
   return {
     id: crypto.randomUUID(),
-    date: new Date().toISOString().slice(0, 10),
+    date: todayISO(),
     time: '12:00',
     type: 'other',
     name: 'item',

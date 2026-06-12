@@ -25,8 +25,17 @@ export function App() {
   const session = useAuthStore(s => s.session);
   const authLoading = useAuthStore(s => s.loading);
 
+  // Než víme, jestli je uživatel přihlášen, ukaž spinner — žádné bliknutí aplikace
+  if (supabase && authLoading) {
+    return (
+      <div className="loading-state" style={{ minHeight: '100dvh' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
   // Supabase je nakonfigurován ALE uživatel není přihlášen → ukáž login
-  if (supabase && !authLoading && !session) {
+  if (supabase && !session) {
     return <LoginScreen />;
   }
 

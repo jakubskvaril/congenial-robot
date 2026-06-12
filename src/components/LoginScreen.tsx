@@ -22,14 +22,14 @@ export function LoginScreen() {
   }
 
   return (
-    <div style={{
+    <div className="view" style={{
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       background: 'var(--bg)', padding: 24, gap: 24,
     }}>
-      <img src="/favicon.svg" alt="Bob" style={{ width: 80, height: 80, borderRadius: 18 }} />
+      <img src="/favicon.svg" alt="Bob" style={{ width: 80, height: 80, borderRadius: 20 }} />
       <div style={{ textAlign: 'center' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', marginBottom: 6 }}>
+        <h1 style={{ fontSize: '1.4rem', letterSpacing: '-0.02em', marginBottom: 6 }}>
           Bobův gurmánský deníček
         </h1>
         <p className="help-text">Přihlaste se pro synchronizaci dat napříč zařízeními</p>

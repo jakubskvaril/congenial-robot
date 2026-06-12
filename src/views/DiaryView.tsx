@@ -12,7 +12,12 @@ interface DiaryViewProps {
 }
 
 export function DiaryView({ energy }: DiaryViewProps) {
-  const [addOpen, setAddOpen] = useState(false);
+  // PWA zkratka "Přidat krmení" (?action=add z manifestu) otevře modal rovnou
+  const [addOpen, setAddOpen] = useState(() => {
+    if (new URLSearchParams(window.location.search).get('action') !== 'add') return false;
+    window.history.replaceState({}, '', window.location.pathname);
+    return true;
+  });
   const logs = useLogsStore(s => s.logs);
   const removeEntry = useLogsStore(s => s.removeEntry);
   const today = todayISO();
@@ -35,9 +40,12 @@ export function DiaryView({ energy }: DiaryViewProps) {
     zinc_mg: perKcal.zinc_mg[stage] * k,
   };
 
-  const caPColor = nutrients.caP_ratio >= 1.2 && nutrients.caP_ratio <= 1.4
-    ? 'good' : nutrients.caP_ratio >= 1.0 && nutrients.caP_ratio < 1.2
-    ? 'warn' : 'bad';
+  const r = nutrients.caP_ratio;
+  const caPColor: 'good' | 'warn' | 'bad' | 'none' =
+    r === 0 ? 'none'
+    : r >= 1.2 && r <= 1.4 ? 'good'
+    : (r >= 1.0 && r < 1.2) || (r > 1.4 && r <= 1.6) ? 'warn'
+    : 'bad';
 
   return (
     <div className="view">
@@ -47,9 +55,10 @@ export function DiaryView({ energy }: DiaryViewProps) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div>
             <div className="section-title">Ca:P poměr dnes</div>
-            <span className={`cap-badge cap-badge--${caPColor}`}>
-              {nutrients.caP_ratio > 0 ? nutrients.caP_ratio.toFixed(2) : '—'} : 1
-              {caPColor === 'good' ? ' ✓' : caPColor === 'warn' ? ' ⚠️' : ' ✗'}
+            <span className={`cap-badge cap-badge--${caPColor === 'none' ? 'good' : caPColor}`}
+              style={caPColor === 'none' ? { background: 'var(--bg)', color: 'var(--muted)', borderColor: 'var(--border)' } : undefined}>
+              {r > 0 ? r.toFixed(2) : '—'} : 1
+              {caPColor === 'good' ? ' ✓' : caPColor === 'warn' ? ' ⚠️' : caPColor === 'bad' ? ' ✗' : ''}
             </span>
             <div className="help-text" style={{ marginTop: 4 }}>
               Ideál 1,2–1,4:1 (NRC 2006)

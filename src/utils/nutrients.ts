@@ -9,7 +9,9 @@ function nowHHMM(): string {
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Lokální datum, ne UTC — jinak se jídlo zapsané po půlnoci uloží do včerejška
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export function logMeat(meat: MeatItem, grams: number, withFelini: boolean): Omit<LogEntry, 'id'> {

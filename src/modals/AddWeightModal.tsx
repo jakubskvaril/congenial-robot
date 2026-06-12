@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useWeightsStore } from '../store/weights';
+import { todayISO } from '../utils/nutrients';
 
 interface AddWeightModalProps {
   onClose: () => void;
@@ -7,7 +8,7 @@ interface AddWeightModalProps {
 
 export function AddWeightModal({ onClose }: AddWeightModalProps) {
   const addWeight = useWeightsStore(s => s.addWeight);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const [kg, setKg] = useState('');
   const [date, setDate] = useState(today);
   const [note, setNote] = useState('');

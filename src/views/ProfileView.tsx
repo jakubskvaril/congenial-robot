@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWeightsStore } from '../store/weights';
 import { useHealthStore } from '../store/health';
 import { getEnergy } from '../utils/energy';
+import { todayISO } from '../utils/nutrients';
 import { BOB } from '../types';
 import { WeightChart } from '../components/WeightChart';
 import { RemindersSettings } from '../components/RemindersSettings';
@@ -21,7 +22,7 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
   const [activeSection, setActiveSection] = useState<'weight' | 'health' | 'reminders' | 'sharing'>('weight');
   const [healthType, setHealthType] = useState<HealthRecord['type']>('vet');
   const [healthDesc, setHealthDesc] = useState('');
-  const [healthDate, setHealthDate] = useState(new Date().toISOString().slice(0, 10));
+  const [healthDate, setHealthDate] = useState(todayISO());
 
   const latestWeight = weights.length > 0 ? weights[weights.length - 1].kg : null;
   const energy = getEnergy(latestWeight ?? 1.5);

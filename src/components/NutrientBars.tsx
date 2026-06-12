@@ -23,7 +23,7 @@ export function NutrientBars({ nutrients, targets }: NutrientBarsProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {bars.map(b => {
         const pct = b.target > 0 ? Math.min((b.value / b.target) * 100, 120) : 0;
-        const color = pct > 110 ? '#c03030' : pct >= 80 ? '#2d8a4e' : '#a07828';
+        const color = pct > 110 ? '#B91C1C' : pct >= 80 ? '#15803D' : '#B8922A';
         return (
           <div key={b.label} className="nutrient-bar-row">
             <div className="nutrient-bar-label">
