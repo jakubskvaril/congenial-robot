@@ -1,0 +1,614 @@
+// ---------------------------------------------------------------------------
+// Walkthrough AI — Prisma schema
+//
+// Design notes (see ARCHITECTURE.md for full rationale):
+//  - Clerk owns identity; `User` is a synced projection (webhook-driven).
+//  - Every pipeline stage (Agents 1-5) writes to its own versioned table
+//    instead of overwriting a single "project state" blob. This lets users
+//    regenerate any stage (e.g. re-run Camera Planner with a new style)
+//    without losing upstream results, and gives us a full audit trail.
+//  - `Job` is the generic BullMQ execution record; domain tables
+//    (RoomAnalysis, Layout, CameraPlan, Prompt, GeneratedVideo) hold the
+//    actual output. A Job always references the domain row it produced.
+//  - Credits use the denormalized-balance + append-only-ledger pattern:
+//    `User.creditBalance` is fast to read, `CreditLedgerEntry` is the
+//    source of truth and is only ever written inside a DB transaction
+//    alongside the balance update.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & accounts
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id             String   @id @default(cuid())
+  clerkId        String   @unique
+  email          String   @unique
+  name           String?
+  imageUrl       String?
+  role           UserRole @default(USER)
+  creditBalance  Int      @default(0)
+  stripeCustomerId String? @unique
+
+  organizationMemberships OrganizationMember[]
+  projects                Project[]
+  creditLedgerEntries     CreditLedgerEntry[]
+  subscriptions           Subscription[]
+  apiKeys                 ApiKey[]
+  auditLogEntries         AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Organization {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  members          OrganizationMember[]
+  projects         Project[]
+  subscriptions    Subscription[]
+  apiKeys          ApiKey[]
+  webhookEndpoints WebhookEndpoint[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrganizationRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+
+  @@unique([organizationId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Projects & source images
+// ---------------------------------------------------------------------------
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  VILLA
+  HOTEL_ROOM
+  AIRBNB
+  OTHER
+}
+
+enum ProjectStatus {
+  DRAFT              // created, images not yet uploaded
+  UPLOADING
+  ANALYZING          // Agent 1 running per-image
+  ANALYZED           // Agent 1 complete, rooms detected, awaiting user review
+  BUILDING_LAYOUT    // Agent 2 running
+  LAYOUT_READY       // user can review/edit room graph
+  PLANNING_CAMERA    // Agent 3 running
+  GENERATING_PROMPT  // Agent 4 running
+  PROMPT_READY       // user reviews prompt, picks style/camera/duration
+  GENERATING_VIDEO   // Agent 5 running
+  COMPLETED
+  FAILED
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  name         String
+  propertyType PropertyType  @default(OTHER)
+  status       ProjectStatus @default(DRAFT)
+
+  images       ProjectImage[]
+  rooms        Room[]
+  roomConnections RoomConnection[]
+  layouts      Layout[]
+  cameraPlans  CameraPlan[]
+  prompts      Prompt[]
+  videos       GeneratedVideo[]
+  jobs         Job[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([organizationId, createdAt])
+}
+
+model ProjectImage {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  storageKey String // key/path within the storage bucket
+  url        String // public or signed CDN URL
+  order      Int    @default(0) // user-controlled sort order (drag & drop)
+  width      Int?
+  height     Int?
+
+  analysis    RoomAnalysis?
+  roomImages  RoomImage[]
+
+  uploadedAt DateTime @default(now())
+
+  @@index([projectId, order])
+}
+
+// ---------------------------------------------------------------------------
+// Agent 1 — Image Understanding
+// ---------------------------------------------------------------------------
+
+enum RoomType {
+  LIVING_ROOM
+  BEDROOM
+  KITCHEN
+  BATHROOM
+  DINING_ROOM
+  HOME_OFFICE
+  HALLWAY
+  ENTRYWAY
+  GARAGE
+  GYM
+  TERRACE
+  BALCONY
+  GARDEN
+  POOL_AREA
+  ROOFTOP
+  VIEW_EXTERIOR
+  OTHER
+}
+
+enum DesignStyle {
+  LUXURY
+  MODERN
+  MEDITERRANEAN
+  SCANDINAVIAN
+  MINIMAL
+  COZY
+  OTHER
+}
+
+// One row per uploaded image — the raw structured extraction from the
+// vision model. Never mutated by later agents; Agent 2 reads across all
+// rows in a project to build the merged Room graph.
+model RoomAnalysis {
+  id      String       @id @default(cuid())
+  imageId String       @unique
+  image   ProjectImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  roomType           RoomType
+  roomTypeConfidence Float
+  style              DesignStyle
+  dimensionsEstimate Json // { widthM, lengthM, ceilingHeightM, confidence }
+  materials          Json // { flooring, walls, ceiling, countertops, ... }
+  furniture          Json // Furniture[] — see src/server/ai/schemas/room.schema.ts
+  windowPlacement    Json // WindowPlacement[]
+  doorPlacement      Json // DoorPlacement[]
+  lighting           Json // { naturalLight, fixtures[], colorTemperature, timeOfDay }
+  outdoorVisibility  Boolean @default(false)
+  outdoorFeatures    Json? // { pool, garden, terrace, view } when outdoorVisibility
+
+  rawModelOutput Json // full untouched structured JSON from the LLM, for audit/replay
+  modelVersion   String
+
+  createdAt DateTime @default(now())
+
+  @@index([roomType])
+}
+
+// ---------------------------------------------------------------------------
+// Agent 2 — Layout Builder
+// ---------------------------------------------------------------------------
+
+// A `Room` is a deduplicated, physical-world room that may be backed by
+// multiple photos (e.g. 3 angles of the same living room).
+model Room {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name         String // user/AI-assigned label, e.g. "Master Bedroom"
+  roomType     RoomType
+  order        Int      @default(0) // walkthrough sequence position, editable by user
+  isUserEdited Boolean  @default(false)
+  notes        String?
+
+  images         RoomImage[]
+  connectionsOut RoomConnection[] @relation("RoomConnectionFrom")
+  connectionsIn  RoomConnection[] @relation("RoomConnectionTo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, order])
+}
+
+// Join table: which source images belong to a merged Room, with the
+// primary (best establishing shot) flagged for use in prompt generation.
+model RoomImage {
+  id      String @id @default(cuid())
+  roomId  String
+  room    Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  imageId String
+  image   ProjectImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  isPrimary Boolean @default(false)
+
+  @@unique([roomId, imageId])
+}
+
+enum ConnectionType {
+  DOOR
+  OPEN_ARCHWAY
+  HALLWAY
+  STAIRCASE
+  OPEN_PLAN
+  OUTDOOR_TRANSITION
+  SLIDING_DOOR
+}
+
+// Directed edge in the room graph, e.g. Garden -> Terrace -> Living Room.
+model RoomConnection {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  fromRoomId String
+  fromRoom   Room   @relation("RoomConnectionFrom", fields: [fromRoomId], references: [id], onDelete: Cascade)
+  toRoomId   String
+  toRoom     Room   @relation("RoomConnectionTo", fields: [toRoomId], references: [id], onDelete: Cascade)
+
+  connectionType ConnectionType
+  confidence     Float @default(1.0)
+  isUserEdited   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([fromRoomId, toRoomId])
+  @@index([projectId])
+}
+
+// Full snapshot of Agent 2's output for a given run. Versioned so the
+// user can regenerate the layout without destroying history, and so
+// downstream CameraPlan rows can pin to the exact layout they were
+// planned against.
+model Layout {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  version           Int
+  roomGraphSnapshot Json // serialized { nodes: Room[], edges: RoomConnection[] } at generation time
+  floorplanEstimate Json // { rooms: [{ roomId, x, y, w, h, rotation }], units: "m" }
+  reasoning         String // natural-language explanation of grouping/ordering decisions
+
+  cameraPlans CameraPlan[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, version])
+}
+
+// ---------------------------------------------------------------------------
+// Agent 3 — Camera Planner
+// ---------------------------------------------------------------------------
+
+enum CameraStyle {
+  GIMBAL
+  DRONE
+  FPV
+  HANDHELD
+}
+
+// One planned shot within a CameraPlan — physically validated against the
+// room graph (never crosses a wall without a corresponding ConnectionType).
+model CameraShot {
+  id           String     @id @default(cuid())
+  cameraPlanId String
+  cameraPlan   CameraPlan @relation(fields: [cameraPlanId], references: [id], onDelete: Cascade)
+
+  order            Int
+  roomId           String // which Room this shot takes place in (denormalized id, not FK, room may be deleted)
+  roomName         String
+  movement         String // e.g. "slow dolly-in", "orbiting reveal", "rise and pan"
+  startFraming     String
+  endFraming       String
+  durationSeconds  Float
+  transitionToNext String // e.g. "match-cut through open archway", "smooth pan following sightline"
+
+  @@index([cameraPlanId, order])
+}
+
+// Full walkthrough camera plan for one generation attempt.
+model CameraPlan {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  layoutId  String
+  layout    Layout  @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+
+  cameraStyle        CameraStyle
+  totalDurationSeconds Float
+  reasoning          String // why this path/order was chosen, physical-plausibility notes
+
+  shots   CameraShot[]
+  prompts Prompt[]
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Agent 4 — Prompt Generator
+// ---------------------------------------------------------------------------
+
+enum VideoProviderName {
+  VEO
+  KLING
+  RUNWAY
+  HAILUO
+}
+
+model Prompt {
+  id           String     @id @default(cuid())
+  projectId    String
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cameraPlanId String
+  cameraPlan   CameraPlan @relation(fields: [cameraPlanId], references: [id], onDelete: Cascade)
+
+  designStyle     DesignStyle
+  targetProvider  VideoProviderName
+  durationSeconds Int
+
+  promptText     String // full natural-language cinematic prompt
+  negativePrompt String // explicit constraints: no invented rooms, no furniture movement, etc.
+  structuredShots Json  // per-shot breakdown tailored for provider adapters
+
+  createdAt DateTime @default(now())
+
+  videos GeneratedVideo[]
+}
+
+// ---------------------------------------------------------------------------
+// Agent 5 — Video Generator
+// ---------------------------------------------------------------------------
+
+enum VideoGenerationStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model GeneratedVideo {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  promptId  String
+  prompt    Prompt  @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  provider      VideoProviderName
+  providerJobId String?
+  status        VideoGenerationStatus @default(QUEUED)
+
+  videoUrl      String?
+  thumbnailUrl  String?
+  durationSeconds Int
+  resolution    String? // e.g. "1920x1080"
+  costCredits   Int
+
+  error String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([projectId, createdAt])
+  @@index([providerJobId])
+}
+
+// ---------------------------------------------------------------------------
+// Job execution tracking (BullMQ audit trail)
+// ---------------------------------------------------------------------------
+
+enum JobType {
+  IMAGE_ANALYSIS
+  LAYOUT_BUILD
+  CAMERA_PLAN
+  PROMPT_GENERATION
+  VIDEO_GENERATION
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+model Job {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  type    JobType
+  status  JobStatus @default(PENDING)
+  queueJobId String? // BullMQ job id, for correlation/cancellation
+
+  progress   Int     @default(0) // 0-100
+  resultRef  String? // id of the domain row produced (RoomAnalysis/Layout/CameraPlan/Prompt/GeneratedVideo)
+  error      String?
+  attempts   Int     @default(0)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([projectId, type, createdAt])
+  @@index([queueJobId])
+}
+
+// ---------------------------------------------------------------------------
+// Credits & billing
+// ---------------------------------------------------------------------------
+
+enum CreditLedgerReason {
+  SUBSCRIPTION_GRANT
+  PURCHASE
+  VIDEO_GENERATION
+  REFUND
+  ADMIN_ADJUSTMENT
+  SIGNUP_BONUS
+}
+
+// Append-only. Never updated or deleted. `balanceAfter` lets us audit
+// drift against the denormalized User.creditBalance at any point in time.
+model CreditLedgerEntry {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount        Int // positive = credit, negative = debit
+  reason        CreditLedgerReason
+  balanceAfter  Int
+  relatedVideoId String?
+  metadata      Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+enum SubscriptionPlanTier {
+  FREE
+  STARTER
+  PRO
+  STUDIO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+  INCOMPLETE
+}
+
+model Subscription {
+  id             String        @id @default(cuid())
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  tier                 SubscriptionPlanTier
+  status               SubscriptionStatus
+  stripeCustomerId     String
+  stripeSubscriptionId String              @unique
+  stripePriceId        String
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean             @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Platform API & webhooks (for programmatic access to the pipeline)
+// ---------------------------------------------------------------------------
+
+model ApiKey {
+  id             String        @id @default(cuid())
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name       String
+  keyHash    String   @unique // sha256 of the raw key; raw key shown once at creation
+  keyPrefix  String   // first 8 chars, shown in UI for identification
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model WebhookEndpoint {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  url    String
+  secret String // HMAC signing secret, shown once
+  events String[] // e.g. ["video.completed", "project.failed"]
+  active Boolean  @default(true)
+
+  deliveries WebhookDelivery[]
+  createdAt  DateTime          @default(now())
+}
+
+model WebhookDelivery {
+  id                String          @id @default(cuid())
+  webhookEndpointId String
+  webhookEndpoint   WebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+
+  event        String
+  payload      Json
+  responseCode Int?
+  attempts     Int    @default(0)
+  succeeded    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([webhookEndpointId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Audit log (admin dashboard, compliance)
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id      String  @id @default(cuid())
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action     String // e.g. "project.deleted", "credits.adjusted"
+  targetType String
+  targetId   String
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
