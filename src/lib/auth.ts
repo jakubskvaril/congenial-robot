@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 
+const PENDING_INVITE_KEY = 'bob_pending_invite';
+
 interface AuthStore {
   session: Session | null;
   loading: boolean;
@@ -22,21 +24,34 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setEffective: (effectiveUserId, isDelegate) => set({ effectiveUserId, isDelegate }),
 }));
 
+/**
+ * Ulož ?invite=ID do localStorage hned při načtení aplikace.
+ * Magic-link redirect parametr zahodí — bez tohoto by se pozvánka
+ * u nepřihlášeného partnera nikdy nepřijala.
+ */
+function capturePendingInvite() {
+  const inviteId = new URLSearchParams(window.location.search).get('invite');
+  if (inviteId) {
+    localStorage.setItem(PENDING_INVITE_KEY, inviteId);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('invite');
+    window.history.replaceState({}, '', url.toString());
+  }
+}
+
 async function resolveEffectiveUser(userId: string) {
   if (!supabase) return;
   try {
-    // Zkus nejdřív přijmout čekající pozvánku (z URL parametru)
-    const params = new URLSearchParams(window.location.search);
-    const inviteId = params.get('invite');
+    // Přijmi čekající pozvánku (přežije magic-link redirect díky localStorage)
+    const inviteId = localStorage.getItem(PENDING_INVITE_KEY);
     if (inviteId) {
-      await supabase.rpc('accept_pet_invite', { p_invite_id: inviteId });
-      // Odstraň parametr z URL bez reload
-      const url = new URL(window.location.href);
-      url.searchParams.delete('invite');
-      window.history.replaceState({}, '', url.toString());
+      try {
+        await supabase.rpc('accept_pet_invite', { p_invite_id: inviteId });
+      } finally {
+        localStorage.removeItem(PENDING_INVITE_KEY);
+      }
     }
 
-    // Zjisti efektivní owner_id
     const { data } = await supabase.rpc('get_effective_owner_id');
     const effectiveId = (data as string | null) ?? userId;
     useAuthStore.getState().setEffective(effectiveId, effectiveId !== userId);
@@ -51,6 +66,8 @@ export async function initAuth() {
     return;
   }
 
+  capturePendingInvite();
+
   const { data: { session } } = await supabase.auth.getSession();
   useAuthStore.getState().setSession(session);
   useAuthStore.getState().setLoading(false);
@@ -59,23 +76,41 @@ export async function initAuth() {
     await resolveEffectiveUser(session.user.id);
   }
 
-  supabase.auth.onAuthStateChange(async (_event, session) => {
+  supabase.auth.onAuthStateChange((_event, session) => {
     useAuthStore.getState().setSession(session);
-    if (session?.user.id) {
-      await resolveEffectiveUser(session.user.id);
-    } else {
-      useAuthStore.getState().setEffective(null, false);
-    }
+    // Supabase volání přímo v callbacku můžou deadlocknout (klient drží zámek) —
+    // odlož na další tick
+    const userId = session?.user.id;
+    setTimeout(() => {
+      if (userId) {
+        void resolveEffectiveUser(userId);
+      } else {
+        useAuthStore.getState().setEffective(null, false);
+      }
+    }, 0);
   });
 }
 
 export async function signInWithEmail(email: string) {
   if (!supabase) throw new Error('Supabase není nakonfigurován');
-  // Vždy použij aktuální origin — funguje na produkci i při lokálním vývoji
   const redirectTo = window.location.origin + window.location.pathname;
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: redirectTo },
+  });
+  if (error) throw error;
+}
+
+/**
+ * Přihlášení 6místným kódem z emailu — funguje i v iOS PWA,
+ * kde magic link otevře Safari místo nainstalované aplikace.
+ */
+export async function verifyEmailOtp(email: string, token: string) {
+  if (!supabase) throw new Error('Supabase není nakonfigurován');
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: token.trim(),
+    type: 'email',
   });
   if (error) throw error;
 }

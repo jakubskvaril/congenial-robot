@@ -10,6 +10,7 @@
   --subtle:   #A8A29E;
   --primary:  #111110;
   --accent:   #B8922A;
+  --gold:     #B8922A; /* alias — používán napříč komponentami */
   --green:    #15803D;
   --red:      #B91C1C;
   --orange:   #C2410C;

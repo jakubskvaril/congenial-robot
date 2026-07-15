@@ -12,19 +12,25 @@ function getEffectiveUserId(): string | null {
   return useAuthStore.getState().effectiveUserId;
 }
 
-export async function pullStore<T>(key: string): Promise<T | null> {
+export interface CloudRow<T> {
+  data: T;
+  updated_at: string;
+}
+
+/** Načte jeden store ze Supabase včetně updated_at (pro last-writer-wins). */
+export async function pullStore<T>(key: string): Promise<CloudRow<T> | null> {
   if (!supabase || !_online) return null;
   const userId = getEffectiveUserId();
   if (!userId) return null;
   try {
     const { data, error } = await supabase
       .from('bob_store')
-      .select('data')
+      .select('data, updated_at')
       .eq('key', key)
       .eq('user_id', userId)
       .maybeSingle();
     if (error || !data) return null;
-    return data.data as T;
+    return { data: data.data as T, updated_at: data.updated_at as string };
   } catch {
     return null;
   }
@@ -54,6 +60,6 @@ async function flushPending() {
         data,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key,user_id' });
-    } catch { /* data jsou v localStorage */ }
+    } catch { /* data jsou v localStorage, zkusíme příště */ }
   }
 }

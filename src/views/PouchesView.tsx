@@ -4,9 +4,9 @@ import type { Pouch } from '../types';
 import { AddPouchModal } from '../modals/AddPouchModal';
 
 function scoreColor(score: number): string {
-  if (score >= 8) return '#2d8a4e';
-  if (score >= 5) return '#a07828';
-  return '#c03030';
+  if (score >= 8) return '#15803D';
+  if (score >= 5) return '#B8922A';
+  return '#B91C1C';
 }
 
 function PouchCard({ pouch, onRemove, onDecrement }: {

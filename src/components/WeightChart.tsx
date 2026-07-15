@@ -55,8 +55,8 @@ export function WeightChart({ weights }: WeightChartProps) {
           <Legend />
           <Area type="monotone" dataKey="refHigh" fill="#e8f5e9" stroke="none" name="Ideální pásmo" fillOpacity={0.5} connectNulls />
           <Area type="monotone" dataKey="refLow" fill="var(--bg)" stroke="none" fillOpacity={1} connectNulls legendType="none" />
-          <Line type="monotone" dataKey="reference" stroke="#2d8a4e" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="Referenční křivka" connectNulls />
-          <Line type="monotone" dataKey="actual" stroke="#a07828" strokeWidth={2.5} dot={{ r: 4, fill: '#a07828' }} name="Bob (reálná váha)" connectNulls />
+          <Line type="monotone" dataKey="reference" stroke="#15803D" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="Referenční křivka" connectNulls />
+          <Line type="monotone" dataKey="actual" stroke="#111110" strokeWidth={2.5} dot={{ r: 4, fill: '#111110' }} name="Bob (reálná váha)" connectNulls />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
