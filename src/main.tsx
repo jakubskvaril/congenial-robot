@@ -3,16 +3,18 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import { App } from './App';
 import { initAuth, useAuthStore } from './lib/auth';
-import { initStoreSubscriptions, pullAllFromCloud } from './lib/cloudSync';
+import { initStoreSubscriptions, pullAllFromCloud, resetSyncForUserChange } from './lib/cloudSync';
 import { startReminderScheduler } from './lib/reminderScheduler';
 
 // Stáhni cloud data vždy, když se vyřeší (nebo změní) efektivní uživatel —
-// pokrývá start aplikace i čerstvé přihlášení přes magic link
+// pokrývá start aplikace i auto-login. Před pullem se zavře push gate,
+// aby lokální stav nemohl přepsat historii nového účtu.
 let _lastPulledUserId: string | null = null;
 useAuthStore.subscribe((state) => {
   if (state.effectiveUserId && state.effectiveUserId !== _lastPulledUserId) {
     _lastPulledUserId = state.effectiveUserId;
-    pullAllFromCloud();
+    resetSyncForUserChange();
+    void pullAllFromCloud();
   }
 });
 

@@ -34,7 +34,8 @@ export function App() {
     );
   }
 
-  // Supabase je nakonfigurován ALE uživatel není přihlášen → ukáž login
+  // Login screen jen jako nouzový fallback — normálně proběhne auto-login
+  // (VITE_APP_EMAIL + VITE_APP_PASSWORD ve Vercelu) a uživatel ho nikdy nevidí
   if (supabase && !session) {
     return <LoginScreen />;
   }

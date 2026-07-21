@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuthStore, invitePetMember, revokeInvite, getMyInvites, signOut } from '../lib/auth';
+import { useAuthStore, invitePetMember, revokeInvite, getMyInvites, signOut, hasAutoLogin } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 
 interface Invite {
@@ -69,9 +69,11 @@ export function PetSharing() {
             </div>
           )}
         </div>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={signOut}>
-          Odhlásit
-        </button>
+        {!hasAutoLogin && (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={signOut}>
+            Odhlásit
+          </button>
+        )}
       </div>
 
       {/* Pokud jsem delegát — ukáži info, ne formulář */}
