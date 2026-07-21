@@ -71,10 +71,12 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
     : 0;
   const kcalPreview = gramsNum > 0 ? Math.round(selectedMeat.kcal * gramsNum / 100) : 0;
   const meatWarning =
-    selectedMeat.id === 'chicken_liver'
+    selectedMeat.id.includes('liver')
       ? '⚠️ Játra: při kombinaci s Felini hrozí přebytek vit. A'
-      : selectedMeat.id === 'pork_leg'
+      : selectedMeat.id.startsWith('pork')
       ? '⚠️ Vepřové: před podáváním přemrazte (−20°C, 72h)'
+      : selectedMeat.id === 'chicken_neck'
+      ? '⚠️ Krky s kostí: podávejte syrové, nikdy vařené (vařená kost se tříští)'
       : '';
 
   const selectedPouch = pouches.find(p => p.id === pouchId);
