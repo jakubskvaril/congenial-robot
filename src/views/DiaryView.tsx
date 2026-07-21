@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { EnergyResult } from '../types';
 import { useLogsStore } from '../store/logs';
 import { sumNutrients, todayISO } from '../utils/nutrients';
+import { computeLifetimeStats } from '../utils/lifetime';
 import { NRC_PER_1000KCAL } from '../data/nrc';
 import { KcalRing } from '../components/KcalRing';
 import { NutrientBars } from '../components/NutrientBars';
@@ -12,18 +13,23 @@ interface DiaryViewProps {
 }
 
 export function DiaryView({ energy }: DiaryViewProps) {
-  // PWA zkratka "Přidat krmení" (?action=add z manifestu) otevře modal rovnou
-  const [addOpen, setAddOpen] = useState(() => {
-    if (new URLSearchParams(window.location.search).get('action') !== 'add') return false;
-    window.history.replaceState({}, '', window.location.pathname);
-    return true;
-  });
+  // PWA zkratka "Přidat krmení" (?action=add z manifestu) otevře modal rovnou.
+  // Initializer musí být čistý (StrictMode ho spouští 2×) — URL čistí až effect.
+  const [addOpen, setAddOpen] = useState(
+    () => new URLSearchParams(window.location.search).get('action') === 'add'
+  );
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('action') === 'add') {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   const logs = useLogsStore(s => s.logs);
   const removeEntry = useLogsStore(s => s.removeEntry);
   const today = todayISO();
   const entries = logs[today] ?? [];
   const sorted = [...entries].sort((a, b) => a.time.localeCompare(b.time));
   const nutrients = sumNutrients(entries);
+  const stats = useMemo(() => computeLifetimeStats(logs), [logs]);
 
   const stage = energy.lifeStage === 'kitten' ? 'kitten' : 'adult';
   const perKcal = NRC_PER_1000KCAL;
@@ -47,45 +53,105 @@ export function DiaryView({ energy }: DiaryViewProps) {
     : (r >= 1.0 && r < 1.2) || (r > 1.4 && r <= 1.6) ? 'warn'
     : 'bad';
 
+  const avgKcalDay = stats.totalDaysLogged > 0
+    ? Math.round(stats.totalKcal / stats.totalDaysLogged)
+    : 0;
+
+  const fmtBig = (n: number) => {
+    if (n < 10_000) return String(n);
+    const k = n / 1000;
+    return k >= 99.95 ? `${Math.round(k)}k` : `${k.toFixed(1)}k`;
+  };
+  // Taurin adaptivně: do 1 g v mg (jinak by první týden ukazoval "0 g")
+  const taurinLabel = stats.totalTaurin_mg < 1000
+    ? `${Math.round(stats.totalTaurin_mg)} mg`
+    : `${(stats.totalTaurin_mg / 1000).toFixed(1)} g`;
+
   return (
     <div className="view">
-      {/* Kaloric ring + Ca:P */}
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        <KcalRing value={nutrients.kcal} max={energy.kcal} size={130} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div>
-            <div className="section-title">Ca:P poměr dnes</div>
-            <span className={`cap-badge cap-badge--${caPColor === 'none' ? 'good' : caPColor}`}
-              style={caPColor === 'none' ? { background: 'var(--bg)', color: 'var(--muted)', borderColor: 'var(--border)' } : undefined}>
-              {r > 0 ? r.toFixed(2) : '—'} : 1
-              {caPColor === 'good' ? ' ✓' : caPColor === 'warn' ? ' ⚠️' : caPColor === 'bad' ? ' ✗' : ''}
-            </span>
-            <div className="help-text" style={{ marginTop: 4 }}>
-              Ideál 1,2–1,4:1 (NRC 2006)
+      {/* ── Hero: dnešek v jednom pohledu ── */}
+      <div className="card hero-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <KcalRing value={nutrients.kcal} max={energy.kcal} size={124} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+            <div>
+              <div className="section-title">Ca : P dnes</div>
+              <span className={`cap-badge cap-badge--${caPColor === 'none' ? 'good' : caPColor}`}
+                style={caPColor === 'none' ? { background: 'var(--bg)', color: 'var(--muted)', borderColor: 'var(--border)' } : undefined}>
+                {r > 0 ? r.toFixed(2) : '—'} : 1
+                {caPColor === 'good' ? ' ✓' : caPColor === 'warn' ? ' ⚠️' : caPColor === 'bad' ? ' ✗' : ''}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 18 }}>
+              <div>
+                <div className="section-title">Taurin</div>
+                <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{Math.round(nutrients.taurin_mg)}</span>
+                <span className="help-text"> / {Math.round(targets.taurin_mg)} mg</span>
+              </div>
+              <div>
+                <div className="section-title">Jídel</div>
+                <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{sorted.length}</span>
+                <span className="help-text"> dnes</span>
+              </div>
             </div>
           </div>
-          <div>
-            <div className="section-title">Taurin</div>
-            <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{Math.round(nutrients.taurin_mg)} mg</span>
-            <span className="help-text"> / {Math.round(targets.taurin_mg)} mg</span>
-          </div>
         </div>
+        <button className="btn btn-gold" onClick={() => setAddOpen(true)}
+          style={{ width: '100%', marginTop: 14 }}>
+          + Přidat jídlo
+        </button>
       </div>
 
-      {/* Nutrient bars */}
+      {/* ── Dlouhodobé statistiky ── */}
+      {stats.totalDaysLogged > 0 && (
+        <div>
+          <div className="section-title" style={{ marginBottom: 8 }}>Bob dlouhodobě</div>
+          <div className="stat-strip">
+            <div className="stat-chip">
+              <div className="stat-chip-icon">📅</div>
+              <div className="stat-chip-value">{stats.totalDaysLogged}</div>
+              <div className="stat-chip-label">dní sledování</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-icon">📈</div>
+              <div className="stat-chip-value">{avgKcalDay}</div>
+              <div className="stat-chip-label">kcal / den ø</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-icon">🍽️</div>
+              <div className="stat-chip-value">{fmtBig(stats.totalMeals)}</div>
+              <div className="stat-chip-label">jídel celkem</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-icon">🔥</div>
+              <div className="stat-chip-value">{fmtBig(stats.totalKcal)}</div>
+              <div className="stat-chip-label">kcal celkem</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-icon">💊</div>
+              <div className="stat-chip-value">{taurinLabel}</div>
+              <div className="stat-chip-label">taurinu</div>
+            </div>
+            {stats.topMeats[0] && (
+              <div className="stat-chip">
+                <div className="stat-chip-icon">🏆</div>
+                <div className="stat-chip-value" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                  {stats.topMeats[0].name}
+                </div>
+                <div className="stat-chip-label">nejoblíbenější</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Denní nutrienty ── */}
       <div className="card">
         <div className="section-title" style={{ marginBottom: 10 }}>Denní nutrienty vs. NRC 2006</div>
         <NutrientBars nutrients={nutrients} targets={targets} />
       </div>
 
-      {/* Actions */}
-      <div className="view-actions">
-        <button className="btn btn-gold" onClick={() => setAddOpen(true)} style={{ flex: 1 }}>
-          + Přidat jídlo
-        </button>
-      </div>
-
-      {/* Today's log */}
+      {/* ── Dnešní jídla ── */}
       {sorted.length === 0 ? (
         <div className="empty-state">
           <p>Dnes ještě nic nezapsáno 🐾</p>

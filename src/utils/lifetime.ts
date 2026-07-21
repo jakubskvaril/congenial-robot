@@ -19,7 +19,9 @@ export interface LifetimeStats {
 }
 
 export function computeLifetimeStats(logs: Record<string, LogEntry[]>): LifetimeStats {
-  const dates = Object.keys(logs).sort();
+  // Prázdné dny (po smazání všech jídel zůstane klíč s []) se nepočítají —
+  // nafukovaly by "dní sledování" a snižovaly průměr kcal/den
+  const dates = Object.keys(logs).filter(d => (logs[d]?.length ?? 0) > 0).sort();
   const allEntries = dates.flatMap(d => logs[d] ?? []);
 
   const meatMap: Record<string, { totalGrams: number; count: number }> = {};

@@ -25,12 +25,16 @@ export const useLogsStore = create<LogsStore>()(
         }));
       },
       removeEntry: (date, id) => {
-        set(state => ({
-          logs: {
-            ...state.logs,
-            [date]: (state.logs[date] ?? []).filter(e => e.id !== id),
-          },
-        }));
+        set(state => {
+          const remaining = (state.logs[date] ?? []).filter(e => e.id !== id);
+          const logs = { ...state.logs };
+          if (remaining.length > 0) {
+            logs[date] = remaining;
+          } else {
+            delete logs[date]; // prázdný den nenechávej v úložišti
+          }
+          return { logs };
+        });
       },
       getDay: (date) => get().logs[date] ?? [],
     }),

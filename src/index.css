@@ -324,6 +324,49 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
 .view { display: flex; flex-direction: column; gap: 12px; }
 .view-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* ── Hero card ───────────────────────────────────────────────────────── */
+.hero-card {
+  background: linear-gradient(150deg, var(--surface) 0%, #FBFAF7 100%);
+}
+
+/* ── Stat strip (dlouhodobé statistiky) ──────────────────────────────── */
+.stat-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+.stat-strip::-webkit-scrollbar { display: none; }
+.stat-chip {
+  flex: 0 0 auto;
+  min-width: 92px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-chip-icon { font-size: 0.85rem; line-height: 1; }
+.stat-chip-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.stat-chip-label {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
 /* ── Nutrient bar ────────────────────────────────────────────────────── */
 .nutrient-bar-row { display: flex; flex-direction: column; gap: 4px; }
 .nutrient-bar-label {

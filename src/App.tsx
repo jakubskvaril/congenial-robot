@@ -7,6 +7,7 @@ import { PouchesView } from './views/PouchesView';
 import { AddWeightModal } from './modals/AddWeightModal';
 import { LoginScreen } from './components/LoginScreen';
 import { SyncStatus } from './components/SyncStatus';
+import { LazyBoundary } from './components/LazyBoundary';
 import { useWeightsStore } from './store/weights';
 import { useAuthStore } from './lib/auth';
 import { supabase } from './lib/supabase';
@@ -52,10 +53,12 @@ export function App() {
         {tab === 'diary'     && <DiaryView energy={energy} />}
         {tab === 'pouches'   && <PouchesView />}
         {(tab === 'analytics' || tab === 'profile') && (
-          <Suspense fallback={<div className="loading-state"><div className="spinner" /><p>Načítám…</p></div>}>
-            {tab === 'analytics' && <AnalyticsView />}
-            {tab === 'profile'   && <ProfileView onAddWeight={() => setWeightModalOpen(true)} />}
-          </Suspense>
+          <LazyBoundary>
+            <Suspense fallback={<div className="loading-state"><div className="spinner" /><p>Načítám…</p></div>}>
+              {tab === 'analytics' && <AnalyticsView />}
+              {tab === 'profile'   && <ProfileView onAddWeight={() => setWeightModalOpen(true)} />}
+            </Suspense>
+          </LazyBoundary>
         )}
       </main>
       <BottomNav active={tab} onChange={setTab} />

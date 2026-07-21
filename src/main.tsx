@@ -22,6 +22,26 @@ initAuth();
 initStoreSubscriptions();
 startReminderScheduler();
 
+// Když nový service worker převezme kontrolu (vyšla nová verze), obnov stránku —
+// starý index.html by odkazoval na už smazané chunky (bílá obrazovka v Profilu).
+// hadController rozliší první instalaci (clientsClaim) od skutečného updatu.
+if ('serviceWorker' in navigator) {
+  let hadController = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) { hadController = true; return; }
+    window.location.reload();
+  });
+}
+
+// Vite vyhazuje tenhle event přesně při selhání dynamického importu —
+// nezávisle na znění chybové hlášky prohlížeče (Safari hlásí jinak než Chrome)
+window.addEventListener('vite:preloadError', () => {
+  if (!sessionStorage.getItem('bob_chunk_reload')) {
+    sessionStorage.setItem('bob_chunk_reload', '1');
+    window.location.reload();
+  }
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
