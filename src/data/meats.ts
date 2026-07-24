@@ -45,6 +45,6 @@ export const SUPPLEMENTS: MeatItem[] = [
   { id: 'egg_yolk',   name: 'Žloutek (1 ks ≈ 18 g)',                kind: 'supplement', defaultGrams: 18,  kcal: 322, protein: 15.9, fat: 26.5, ca_mg: 129,   p_mg: 390, taurin_mg: 0, vitA_IU: 1270, vitD3_IU: 218, iron_mg: 2.73, zinc_mg: 2.30, omega3_mg: 115   },
   // Skořápka: ~38 % elementárního Ca → 1 skořápka (5,5 g) ≈ 2100 mg Ca
   { id: 'eggshell',   name: 'Vaječná skořápka drcená (1 ks ≈ 5,5 g)', kind: 'supplement', defaultGrams: 5.5, kcal: 0,   protein: 0,    fat: 0,    ca_mg: 38000, p_mg: 140, taurin_mg: 0, vitA_IU: 0,    vitD3_IU: 0,   iron_mg: 0,    zinc_mg: 0,    omega3_mg: 0     },
-  // Lososový olej: EPA+DHA ~30 % — 2 g (½ lžičky) ≈ 600 mg omega-3
-  { id: 'salmon_oil', name: 'Lososový olej (½ lžičky ≈ 2 g)',       kind: 'supplement', defaultGrams: 2,   kcal: 900, protein: 0,    fat: 100,  ca_mg: 0,     p_mg: 0,   taurin_mg: 0, vitA_IU: 0,    vitD3_IU: 0,   iron_mg: 0,    zinc_mg: 0,    omega3_mg: 30000 },
+  // Lososový olej: EPA+DHA ~22 % (běžný, ne koncentrát) — 2 g (½ lžičky) ≈ 440 mg omega-3
+  { id: 'salmon_oil', name: 'Lososový olej (½ lžičky ≈ 2 g)',       kind: 'supplement', defaultGrams: 2,   kcal: 900, protein: 0,    fat: 100,  ca_mg: 0,     p_mg: 0,   taurin_mg: 0, vitA_IU: 0,    vitD3_IU: 0,   iron_mg: 0,    zinc_mg: 0,    omega3_mg: 22000 },
 ];

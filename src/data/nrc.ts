@@ -29,8 +29,9 @@ export const NRC_PER_1000KCAL = {
  * - 'ceiling'  → POZOR NA PŘEBYTEK (rozpustné v tucích, kumulují se).
  *     Vit. A: hypervitaminóza A z jater → exostózy krční páteře
  *     (deformující cervikální spondylóza); kočka neumí regulovat vstřebávání.
- *     Vit. D3: předávkování → hyperkalcémie, kalcifikace měkkých tkání.
  *     Stačí týdenní průměr v normě, denní výkyvy nevadí.
+ *     (Pozn.: vit. D3 je 'critical' — deficit u domácí svalové stravy vede
+ *     k rachitidě/osteomalacii, přebytek k hyperkalcémii; obojí škodí.)
  * - 'flex'     → stačí PŘIBLIŽNĚ / dlouhodobý průměr.
  *     Fe, Zn: deficit se rozvíjí týdny; omega-3 (EPA+DHA): podpora vývoje
  *     mozku, bez akutního deficitního syndromu.
@@ -43,7 +44,8 @@ export const NUTRIENT_CLASSES: Record<string, NutrientClass> = {
   phosphorus_mg: 'critical',
   taurin_mg:     'floor',
   vitA_IU:       'ceiling',
-  vitD3_IU:      'ceiling',
+  vitD3_IU:      'critical', // deficit (rachitida) i přebytek (hyperkalcémie) škodí
+
   vitE_mg:       'floor',
   iron_mg:       'flex',
   zinc_mg:       'flex',

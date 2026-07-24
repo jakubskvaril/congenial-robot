@@ -24,6 +24,11 @@ const DRIVERS: { key: keyof NRCTargets & keyof DailyNutrients; label: string; we
 const CEILINGS: (keyof NRCTargets & keyof DailyNutrients)[] = ['vitA_IU', 'vitD3_IU'];
 const CEILING_LIMIT = 1.5; // max 150 % denního cíle
 
+// Kritické nutrienty (přesně) — přebytek taky škodí (Ca, P). Porci škálujeme
+// tak, aby netrefila víc než 120 % cíle.
+const CRITICAL: (keyof NRCTargets & keyof DailyNutrients)[] = ['calcium_mg', 'phosphorus_mg'];
+const CRITICAL_LIMIT = 1.2;
+
 function nutrientOf(m: MeatItem, key: string): number {
   switch (key) {
     case 'calcium_mg':    return m.ca_mg;
@@ -40,14 +45,30 @@ function nutrientOf(m: MeatItem, key: string): number {
   }
 }
 
-function portionFor(m: MeatItem, remainingKcal: number): number {
+function portionFor(
+  m: MeatItem,
+  remainingKcal: number,
+  acc: Record<string, number>,
+  targets: NRCTargets,
+): number {
   // Doplňky mají pevnou porci; masa výchozích 40 g, omezené zbývajícími kcal
   let g = m.defaultGrams ?? 40;
   if (m.kcal > 0) {
-    const maxByKcal = (remainingKcal / m.kcal) * 100;
-    g = Math.min(g, maxByKcal);
+    g = Math.min(g, (remainingKcal / m.kcal) * 100);
   }
-  return Math.round(g);
+  // Škáluj podle deficitu kritických nutrientů — hlavně kvůli skořápce
+  // (38 000 mg Ca/100 g): 6 g by dalo 2 280 mg, tj. několikanásobek cíle.
+  for (const key of CRITICAL) {
+    const per100 = nutrientOf(m, key);
+    if (per100 <= 0) continue;
+    const deficit = Math.max(0, targets[key] * CRITICAL_LIMIT - (acc[key] ?? 0));
+    const maxByNutrient = (deficit / per100) * 100;
+    g = Math.min(g, maxByNutrient);
+  }
+  // Doplňky můžou být malé (skořápka ~1,5 g), masa ne pod 5 g
+  const minG = m.kind === 'supplement' ? 0.5 : 5;
+  if (g < minG) return 0;
+  return Math.round(g * 10) / 10;
 }
 
 /**
@@ -66,6 +87,7 @@ export function recommendDay(
   let kcalLeft = Math.max(0, remainingKcal);
 
   const candidates = [...MEATS.filter(m => m.id !== 'kibble'), ...SUPPLEMENTS];
+  const used = new Set<string>(); // stejné jídlo nedoporučuj dvakrát
 
   for (let pick = 0; pick < 3; pick++) {
     // Zbývající deficity pro řídicí nutrienty
@@ -80,19 +102,22 @@ export function recommendDay(
     let best: { food: MeatItem; grams: number; score: number; fills: string[] } | null = null;
 
     for (const food of candidates) {
-      const grams = portionFor(food, kcalLeft);
-      if (grams < 3) continue;
+      if (used.has(food.id)) continue;
+      const grams = portionFor(food, kcalLeft, acc, targets);
+      if (grams <= 0) continue;
       const f = grams / 100;
       const addKcal = food.kcal * f;
       if (addKcal > kcalLeft + 5) continue;
 
-      // Zamítni přestřelení stropových vitaminů
-      let overCeiling = false;
+      // Zamítni přestřelení stropových vitaminů (A, D) i kritických (Ca, P)
+      let overshoot = false;
       for (const c of CEILINGS) {
-        const after = (acc[c] ?? 0) + nutrientOf(food, c) * f;
-        if (after > targets[c] * CEILING_LIMIT) { overCeiling = true; break; }
+        if ((acc[c] ?? 0) + nutrientOf(food, c) * f > targets[c] * CEILING_LIMIT) { overshoot = true; break; }
       }
-      if (overCeiling) continue;
+      for (const c of CRITICAL) {
+        if ((acc[c] ?? 0) + nutrientOf(food, c) * f > targets[c] * CRITICAL_LIMIT + 1) { overshoot = true; break; }
+      }
+      if (overshoot) continue;
 
       // Skóre = kolik váženého deficitu porce zaplní (frakce cíle)
       let score = 0;
@@ -114,6 +139,7 @@ export function recommendDay(
     }
 
     if (!best) break;
+    used.add(best.food.id);
 
     // Zaloguj výběr a přičti jeho hodnoty
     const f = best.grams / 100;

@@ -38,6 +38,23 @@ describe('recommendDay', () => {
     expect(fillsCalcium).toBe(true);
   });
 
+  it('does not massively overshoot calcium (eggshell portion is scaled to deficit)', () => {
+    // Prázdný den: doporučení nesmí nasypat několikanásobek denního Ca cíle
+    const recs = recommendDay(empty(), targets, 250);
+    let caAdded = 0;
+    for (const r of recs) {
+      // ca_mg je per 100 g
+      caAdded += (r.meat.ca_mg * r.grams) / 100;
+    }
+    expect(caAdded).toBeLessThanOrEqual(targets.calcium_mg * 1.35);
+  });
+
+  it('never recommends the same food twice', () => {
+    const recs = recommendDay(empty(), targets, 250);
+    const ids = recs.map(r => r.meat.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('does not recommend when there is no calorie room', () => {
     const recs = recommendDay(empty(), targets, 0);
     expect(recs.length).toBe(0);

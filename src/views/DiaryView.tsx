@@ -36,9 +36,9 @@ export function DiaryView({ energy }: DiaryViewProps) {
   const removeEntry = useLogsStore(s => s.removeEntry);
   const addEntry = useLogsStore(s => s.addEntry);
   const today = todayISO();
-  const entries = logs[today] ?? [];
-  const sorted = [...entries].sort((a, b) => a.time.localeCompare(b.time));
-  const nutrients = sumNutrients(entries);
+  const entries = useMemo(() => logs[today] ?? [], [logs, today]);
+  const sorted = useMemo(() => [...entries].sort((a, b) => a.time.localeCompare(b.time)), [entries]);
+  const nutrients = useMemo(() => sumNutrients(entries), [entries]);
   const stats = useMemo(() => computeLifetimeStats(logs), [logs]);
 
   const stage = energy.lifeStage === 'kitten' ? 'kitten' : 'adult';
