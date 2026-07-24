@@ -9,4 +9,63 @@ export const NRC_PER_1000KCAL = {
   vitE_mg:       { kitten: 7.5,   adult: 7.5   },
   iron_mg:       { kitten: 20,    adult: 20    },
   zinc_mg:       { kitten: 18.75, adult: 18.75 },
+  // EPA+DHA: NRC 2006 RA pro koťata 25 mg/1000 kcal (vývoj mozku a sítnice —
+  // DHA); pro dospělé NRC minimum nestanovuje, 30 mg je běžně doporučovaná
+  // udržovací hodnota
+  omega3_mg:     { kitten: 25,    adult: 30    },
+};
+
+/**
+ * Jak přísně je potřeba nutrient trefit (dle NRC 2006 / klinické literatury):
+ *
+ * - 'critical' → trefit PŘESNĚ. Málo i moc škodí.
+ *     Ca, P: u koťat nutriční sekundární hyperparatyreóza při nedostatku,
+ *     poruchy skeletu při přebytku; přebytek P dlouhodobě zatěžuje ledviny.
+ * - 'floor'    → NESMÍ CHYBĚT, přebytek neškodí (vyloučí se).
+ *     Taurin: deficit → dilatační kardiomyopatie a degenerace sítnice
+ *     (Pion et al. 1987); nadbytek se vyloučí močí.
+ *     Bílkoviny: obligátní karnivor; přebytek zdravé kočce nevadí.
+ *     Vit. E: deficit při rybí stravě (steatitida); přebytek velmi bezpečný.
+ * - 'ceiling'  → POZOR NA PŘEBYTEK (rozpustné v tucích, kumulují se).
+ *     Vit. A: hypervitaminóza A z jater → exostózy krční páteře
+ *     (deformující cervikální spondylóza); kočka neumí regulovat vstřebávání.
+ *     Vit. D3: předávkování → hyperkalcémie, kalcifikace měkkých tkání.
+ *     Stačí týdenní průměr v normě, denní výkyvy nevadí.
+ * - 'flex'     → stačí PŘIBLIŽNĚ / dlouhodobý průměr.
+ *     Fe, Zn: deficit se rozvíjí týdny; omega-3 (EPA+DHA): podpora vývoje
+ *     mozku, bez akutního deficitního syndromu.
+ */
+export type NutrientClass = 'critical' | 'floor' | 'ceiling' | 'flex';
+
+export const NUTRIENT_CLASSES: Record<string, NutrientClass> = {
+  protein_g:     'floor',
+  calcium_mg:    'critical',
+  phosphorus_mg: 'critical',
+  taurin_mg:     'floor',
+  vitA_IU:       'ceiling',
+  vitD3_IU:      'ceiling',
+  vitE_mg:       'floor',
+  iron_mg:       'flex',
+  zinc_mg:       'flex',
+  omega3_mg:     'flex',
+};
+
+export const CLASS_INFO: Record<NutrientClass, { badge: string; hint: string }> = {
+  critical: { badge: '🎯 přesně',   hint: 'Málo i moc škodí — trefit rozmezí' },
+  floor:    { badge: '⬇ min.',      hint: 'Nesmí chybět, přebytek neškodí' },
+  ceiling:  { badge: '⬆ pozor',     hint: 'Přebytek se kumuluje a škodí' },
+  flex:     { badge: '≈ orientačně', hint: 'Stačí dlouhodobý průměr' },
+};
+
+export const NUTRIENT_LABELS: Record<string, string> = {
+  protein_g:     'Bílkoviny',
+  calcium_mg:    'Vápník',
+  phosphorus_mg: 'Fosfor',
+  taurin_mg:     'Taurin',
+  vitA_IU:       'Vit. A',
+  vitD3_IU:      'Vit. D3',
+  vitE_mg:       'Vit. E',
+  iron_mg:       'Železo',
+  zinc_mg:       'Zinek',
+  omega3_mg:     'Omega-3',
 };

@@ -36,6 +36,7 @@ export function logMeat(meat: MeatItem, grams: number, withFelini: boolean): Omi
     vitE_mg: Math.round(FELINI_PER_G.vitE_mg * fd * 10) / 10,
     iron_mg: Math.round((meat.iron_mg * f + FELINI_PER_G.iron_mg * fd) * 100) / 100,
     zinc_mg: Math.round((meat.zinc_mg * f + FELINI_PER_G.zinc_mg * fd) * 100) / 100,
+    omega3_mg: Math.round((meat.omega3_mg ?? 0) * f),
     feliniDose_g: withFelini ? fd : undefined,
   };
 }
@@ -89,6 +90,7 @@ export function sumNutrients(entries: LogEntry[]) {
   const sum = {
     kcal: 0, protein_g: 0, fat_g: 0, calcium_mg: 0, phosphorus_mg: 0,
     taurin_mg: 0, vitA_IU: 0, vitD3_IU: 0, vitE_mg: 0, iron_mg: 0, zinc_mg: 0,
+    omega3_mg: 0,
   };
   for (const e of entries) {
     sum.kcal += e.kcal;
@@ -102,6 +104,7 @@ export function sumNutrients(entries: LogEntry[]) {
     sum.vitE_mg += e.vitE_mg;
     sum.iron_mg += e.iron_mg;
     sum.zinc_mg += e.zinc_mg;
+    sum.omega3_mg += e.omega3_mg ?? 0;
   }
   return {
     ...sum,

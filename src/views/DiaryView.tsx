@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { EnergyResult } from '../types';
+import type { EnergyResult, MeatItem } from '../types';
 import { useLogsStore } from '../store/logs';
-import { sumNutrients, todayISO } from '../utils/nutrients';
+import { sumNutrients, todayISO, logMeat } from '../utils/nutrients';
 import { computeLifetimeStats } from '../utils/lifetime';
+import { recommendDay, weeklyLowNutrients } from '../utils/recommend';
 import { NRC_PER_1000KCAL } from '../data/nrc';
 import { KcalRing } from '../components/KcalRing';
 import { NutrientBars } from '../components/NutrientBars';
 import { AddFoodModal } from '../modals/AddFoodModal';
+
+function foodEmoji(m: MeatItem): string {
+  if (m.id.startsWith('egg')) return '🥚';
+  if (m.id === 'salmon_oil') return '🫗';
+  if (/salmon|mackerel|cod|sardin/.test(m.id)) return '🐟';
+  if (/liver|heart|kidney|gizzard/.test(m.id)) return '🫀';
+  return '🥩';
+}
 
 interface DiaryViewProps {
   energy: EnergyResult;
@@ -25,6 +34,7 @@ export function DiaryView({ energy }: DiaryViewProps) {
   }, []);
   const logs = useLogsStore(s => s.logs);
   const removeEntry = useLogsStore(s => s.removeEntry);
+  const addEntry = useLogsStore(s => s.addEntry);
   const today = todayISO();
   const entries = logs[today] ?? [];
   const sorted = [...entries].sort((a, b) => a.time.localeCompare(b.time));
@@ -44,7 +54,21 @@ export function DiaryView({ energy }: DiaryViewProps) {
     vitE_mg: perKcal.vitE_mg[stage] * k,
     iron_mg: perKcal.iron_mg[stage] * k,
     zinc_mg: perKcal.zinc_mg[stage] * k,
+    omega3_mg: perKcal.omega3_mg[stage] * k,
   };
+
+  // Doporučení na zbytek dne — co dodat, aby se tabulky naplnily
+  const weeklyLow = useMemo(() => weeklyLowNutrients(logs, stage), [logs, stage]);
+  const recos = useMemo(
+    () => recommendDay(nutrients, targets, energy.kcal - nutrients.kcal, weeklyLow),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nutrients, energy.kcal, weeklyLow, stage],
+  );
+
+  function quickAdd(meat: MeatItem, grams: number) {
+    // Doplňky bez Felini; masa s Felini (dopočítá Ca:P)
+    addEntry(logMeat(meat, grams, meat.kind !== 'supplement'));
+  }
 
   const r = nutrients.caP_ratio;
   const caPColor: 'good' | 'warn' | 'bad' | 'none' =
@@ -142,6 +166,41 @@ export function DiaryView({ energy }: DiaryViewProps) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Doporučení na zbytek dne ── */}
+      {entries.length > 0 && recos.length > 0 && (
+        <div className="reco-card">
+          <div className="section-title" style={{ marginBottom: 4, color: 'var(--accent)' }}>
+            💡 Dodej na zbytek dne
+          </div>
+          <p className="help-text" style={{ marginBottom: 8 }}>
+            Ať Bob naplní tabulky — návrh podle dnešního deficitu
+            {weeklyLow.size > 0 ? ' i dlouhodobě chybějících hodnot' : ''}:
+          </p>
+          {recos.map((s, i) => (
+            <div key={i} className="reco-item">
+              <div className="reco-emoji">{foodEmoji(s.meat)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
+                  {s.grams} g {s.meat.name.replace(/\s*\(.*?\)/, '')}
+                </div>
+                <div className="help-text">
+                  {s.kcal} kcal{s.fills.length > 0 ? ` · doplní ${s.fills.join(' + ')}` : ''}
+                </div>
+              </div>
+              <button type="button" className="reco-add-btn" title="Přidat"
+                onClick={() => quickAdd(s.meat, s.grams)}>＋</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {entries.length > 0 && recos.length === 0 && (
+        <div className="reco-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.4rem' }}>✅</div>
+          <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>Tabulky jsou naplněné</p>
+          <p className="help-text">Bob má dnes klíčové živiny v pořádku.</p>
         </div>
       )}
 

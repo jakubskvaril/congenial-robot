@@ -3,7 +3,7 @@ import type { EnergyResult, MeatItem } from '../types';
 import { useLogsStore } from '../store/logs';
 import { usePouchesStore } from '../store/pouches';
 import { useCustomMeatsStore } from '../store/customMeats';
-import { MEATS } from '../data/meats';
+import { MEATS, SUPPLEMENTS } from '../data/meats';
 import { logMeat, logPouch, logFelini } from '../utils/nutrients';
 import { calcFeliniDose } from '../utils/felini';
 import { BarcodeScanner } from '../components/BarcodeScanner';
@@ -28,6 +28,7 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
 
   const allMeats: MeatItem[] = [
     ...MEATS,
+    ...SUPPLEMENTS,
     ...customMeats,
   ];
 
@@ -35,6 +36,13 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
   const [meatId, setMeatId] = useState(MEATS[0].id);
   const [grams, setGrams] = useState('100');
   const [withFelini, setWithFelini] = useState(true);
+
+  // Změna druhu: u doplňku s pevnou porcí ji předvyplň
+  function handleMeatChange(id: string) {
+    setMeatId(id);
+    const m = allMeats.find(x => x.id === id);
+    if (m?.defaultGrams) setGrams(String(m.defaultGrams));
+  }
 
   // ── EAN scan sub-state ───────────────────────────────────────────────
   const [scanState, setScanState] = useState<ScanState>('idle');
@@ -65,8 +73,11 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
 
   // ── Computed ─────────────────────────────────────────────────────────
   const selectedMeat = allMeats.find(m => m.id === meatId) ?? allMeats[0];
+  const isSupplement = selectedMeat.kind === 'supplement';
+  // U doplňků (skořápka, olej…) Felini nedává smysl
+  const effectiveFelini = withFelini && !isSupplement;
   const gramsNum = parseFloat(grams) || 0;
-  const feliniDosePreview = gramsNum > 0 && withFelini
+  const feliniDosePreview = gramsNum > 0 && effectiveFelini
     ? calcFeliniDose(selectedMeat.ca_mg, selectedMeat.p_mg, gramsNum)
     : 0;
   const kcalPreview = gramsNum > 0 ? Math.round(selectedMeat.kcal * gramsNum / 100) : 0;
@@ -149,6 +160,7 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
       vitD3_IU:  parseFloat(draftVitD3)  || 0,
       iron_mg:   parseFloat(draftIron)   || 0,
       zinc_mg:   parseFloat(draftZinc)   || 0,
+      omega3_mg: 0, // OFF neposkytuje EPA/DHA — uživatel doplní přes doplňky
     };
   }
 
@@ -173,7 +185,7 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (mode === 'meat') {
-      addEntry(logMeat(selectedMeat, gramsNum, withFelini));
+      addEntry(logMeat(selectedMeat, gramsNum, effectiveFelini));
     } else if (mode === 'pouch' && selectedPouch) {
       const g = parseFloat(pouchGrams) || 85;
       addEntry(logPouch(selectedPouch, g));
@@ -403,10 +415,13 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
             {mode === 'meat' && scanState === 'idle' && (
               <>
                 <div className="form-group">
-                  <label>Druh masa</label>
-                  <select value={meatId} onChange={e => setMeatId(e.target.value)}>
+                  <label>Druh masa / doplněk</label>
+                  <select value={meatId} onChange={e => handleMeatChange(e.target.value)}>
                     <optgroup label="Vestavěná masa">
                       {MEATS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </optgroup>
+                    <optgroup label="Vejce a doplňky">
+                      {SUPPLEMENTS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                     </optgroup>
                     {customMeats.length > 0 && (
                       <optgroup label="Moje masa (skenovaná)">
@@ -443,13 +458,19 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
                       onChange={e => setGrams(e.target.value)} required />
                   </div>
                   <div className="form-group" style={{ justifyContent: 'flex-end' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <input type="checkbox" checked={withFelini}
-                        onChange={e => setWithFelini(e.target.checked)} />
-                      Přidat Felini
-                    </label>
-                    {withFelini && gramsNum > 0 && (
-                      <div className="help-text">→ {feliniDosePreview} g Felini</div>
+                    {isSupplement ? (
+                      <span className="help-text">Doplněk — bez Felini</span>
+                    ) : (
+                      <>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input type="checkbox" checked={withFelini}
+                            onChange={e => setWithFelini(e.target.checked)} />
+                          Přidat Felini
+                        </label>
+                        {effectiveFelini && gramsNum > 0 && (
+                          <div className="help-text">→ {feliniDosePreview} g Felini</div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -457,8 +478,9 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
                 {meatWarning && <p className="error-text">{meatWarning}</p>}
                 {gramsNum > 0 && (
                   <div className="help-text" style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
-                    Preview: {kcalPreview} kcal · Ca:P po Felini ≈{' '}
-                    {withFelini ? '1.30' : (selectedMeat.p_mg > 0 ? (selectedMeat.ca_mg / selectedMeat.p_mg).toFixed(2) : '—')} : 1
+                    Preview: {kcalPreview} kcal
+                    {!isSupplement && <> · Ca:P po Felini ≈{' '}
+                    {effectiveFelini ? '1.30' : (selectedMeat.p_mg > 0 ? (selectedMeat.ca_mg / selectedMeat.p_mg).toFixed(2) : '—')} : 1</>}
                   </div>
                 )}
               </>

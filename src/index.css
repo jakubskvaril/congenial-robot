@@ -367,6 +367,65 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   white-space: nowrap;
 }
 
+/* ── Nutrient badges (třída důležitosti) ─────────────────────────────── */
+.nut-badge {
+  font-size: 0.56rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.nut-badge--critical { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+.nut-badge--floor    { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+.nut-badge--ceiling  { background: #FFF7ED; color: #C2410C; border-color: #FED7AA; }
+.nut-badge--flex     { background: var(--bg); color: var(--muted); border-color: var(--border); }
+
+/* ── Doporučení dne ──────────────────────────────────────────────────── */
+.reco-card {
+  background: linear-gradient(150deg, #FFFDF6 0%, #FDF6E9 100%);
+  border: 1px solid #F0E4C4;
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.reco-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(184, 146, 42, 0.15);
+}
+.reco-item:last-child { border-bottom: none; }
+.reco-emoji {
+  font-size: 1.4rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.reco-add-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s var(--ease-spring);
+}
+.reco-add-btn:active { transform: scale(0.85); }
+
 /* ── Nutrient bar ────────────────────────────────────────────────────── */
 .nutrient-bar-row { display: flex; flex-direction: column; gap: 4px; }
 .nutrient-bar-label {

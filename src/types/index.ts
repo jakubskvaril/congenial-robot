@@ -23,6 +23,12 @@ export interface MeatItem {
   vitD3_IU: number;
   iron_mg: number;
   zinc_mg: number;
+  /** EPA+DHA mg/100g (volitelné — skenovaná/vlastní masa ho nemusí mít) */
+  omega3_mg?: number;
+  /** Typická porce v gramech (1 ks vejce, lžička oleje…) — předvyplní se do formuláře */
+  defaultGrams?: number;
+  /** Kategorie pro nabídku v modalu */
+  kind?: 'meat' | 'supplement';
 }
 
 export interface LogEntry {
@@ -43,6 +49,8 @@ export interface LogEntry {
   vitE_mg: number;
   iron_mg: number;
   zinc_mg: number;
+  /** EPA+DHA mg — starší záznamy pole nemají (čte se s ?? 0) */
+  omega3_mg?: number;
   feliniDose_g?: number;
   pouchId?: string;
 }
@@ -127,6 +135,7 @@ export interface DailyNutrients {
   vitE_mg: number;
   iron_mg: number;
   zinc_mg: number;
+  omega3_mg: number;
   caP_ratio: number;
 }
 
@@ -140,6 +149,7 @@ export interface NRCTargets {
   vitE_mg: number;
   iron_mg: number;
   zinc_mg: number;
+  omega3_mg: number;
 }
 
 export type TabId = 'diary' | 'pouches' | 'analytics' | 'profile';
