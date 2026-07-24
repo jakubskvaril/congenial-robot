@@ -65,6 +65,8 @@ export function DiaryView({ energy }: DiaryViewProps) {
     addEntry(logMeat(meat, grams, meat.kind !== 'supplement'));
   }
 
+  const remainingKcal = energy.kcal - nutrients.kcal;
+
   // Klíčové (min./přesně/strop) živiny pod cílem dnes; orientační podle týdne
   const keyShort = NUTRIENT_META
     .filter(m => NUTRIENT_CLASSES[m.key] !== 'flex')
@@ -156,12 +158,20 @@ export function DiaryView({ energy }: DiaryViewProps) {
                 : `${flexShort.map(labelOf).join(' a ')} klidně doženeš zítra — je to orientační živina.`}
             </p>
           </div>
-        ) : (
+        ) : remainingKcal < 8 ? (
           <div className="reco-card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '1.4rem' }}>🍽️</div>
             <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>Denní kalorie vyčerpané</p>
             <p className="help-text">
-              Ještě chybí {keyShort.map(labelOf).join(', ')} — doplň zítra ráno, ať Bob nepřekrmíš.
+              Ještě chybí {keyShort.map(labelOf).join(', ')} — doplň zítra ráno, ať Boba nepřekrmíš.
+            </p>
+          </div>
+        ) : (
+          <div className="reco-card" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.4rem' }}>ℹ️</div>
+            <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>Ještě chybí {keyShort.map(labelOf).join(', ')}</p>
+            <p className="help-text">
+              Běžným masem to teď nedoženeš — řeš přes Felini nebo doplněk (žloutek, skořápka, olej).
             </p>
           </div>
         )

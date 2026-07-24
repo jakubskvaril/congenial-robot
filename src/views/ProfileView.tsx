@@ -42,10 +42,13 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
   const stage = energy.lifeStage === 'kitten' ? 'kitten' : 'adult';
 
   // ── Statistiky ──
+  const hasWeight = latestWeight !== null;
   const stats = useMemo(() => computeLifetimeStats(logs), [logs]);
   const allDays = useMemo(() => loggedDays(logs), [logs]);
   const lifetimeAvg = useMemo(() => avgNutrientsPerDay(logs, allDays), [logs, allDays]);
-  const weekAvg = useMemo(() => avgNutrientsPerDay(logs, allDays.slice(-7)), [logs, allDays]);
+  // Týdenní průměr jen z DOKONČENÝCH dní (dnešek je zatím neúplný)
+  const weekDays = useMemo(() => allDays.filter(d => d !== todayISO()).slice(-7), [allDays]);
+  const weekAvg = useMemo(() => avgNutrientsPerDay(logs, weekDays), [logs, weekDays]);
   const targets = useMemo(() => dailyTargets(energy.kcal, stage), [energy.kcal, stage]);
   const ceilings = useMemo(() => dailyCeilings(energy.kcal), [energy.kcal]);
   const avgKcalDay = stats.totalDaysLogged > 0 ? Math.round(stats.totalKcal / stats.totalDaysLogged) : 0;
@@ -101,7 +104,8 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
               flex: 1, padding: '10px 2px', border: 'none',
               background: activeSection === s ? 'var(--primary)' : 'transparent',
               color: activeSection === s ? 'white' : 'var(--muted)',
-              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.68rem',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.66rem',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}
           >
             {s === 'stats' ? '📊 Přehled' : s === 'weight' ? '⚖️ Váha' : s === 'health' ? '🏥 Zdraví' : s === 'reminders' ? '🔔 Alarm' : '☁️ Sync'}
@@ -150,14 +154,29 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
               )}
             </div>
 
-            {/* Týdenní průměr na den */}
-            <div className="card">
-              <div className="section-title" style={{ marginBottom: 2 }}>Týdenní průměr na den</div>
-              <p className="help-text" style={{ marginBottom: 10 }}>
-                Posledních {Math.min(allDays.length, 7)} dní — takhle Bob reálně jí
-              </p>
-              <NutrientAverages avg={weekAvg} targets={targets} ceilings={ceilings} />
-            </div>
+            {/* Bez váhy nejsou cíle spolehlivé */}
+            {!hasWeight && (
+              <div className="card" style={{ borderColor: '#F0D060', background: '#FFFBEB' }}>
+                <p className="help-text" style={{ color: '#8a6010' }}>
+                  ⚖️ Zadej Bobovu váhu, ať se průměry porovnají se správnými cíli.
+                  Zatím ukazujeme jen holé hodnoty.
+                </p>
+                <button className="btn btn-gold btn-sm" style={{ marginTop: 8 }} onClick={onAddWeight}>
+                  + Přidat vážení
+                </button>
+              </div>
+            )}
+
+            {/* Týdenní průměr na den (jen dokončené dny) */}
+            {weekDays.length > 0 && (
+              <div className="card">
+                <div className="section-title" style={{ marginBottom: 2 }}>Týdenní průměr na den</div>
+                <p className="help-text" style={{ marginBottom: 10 }}>
+                  Posledních {weekDays.length} {weekDays.length === 1 ? 'dokončený den' : weekDays.length < 5 ? 'dokončené dny' : 'dokončených dní'} — takhle Bob reálně jí
+                </p>
+                <NutrientAverages avg={weekAvg} targets={targets} ceilings={ceilings} plain={!hasWeight} />
+              </div>
+            )}
 
             {/* Celoživotní průměr na den */}
             <div className="card">
@@ -165,7 +184,7 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
               <p className="help-text" style={{ marginBottom: 10 }}>
                 Za všech {stats.totalDaysLogged} sledovaných dní
               </p>
-              <NutrientAverages avg={lifetimeAvg} targets={targets} ceilings={ceilings} />
+              <NutrientAverages avg={lifetimeAvg} targets={targets} ceilings={ceilings} plain={!hasWeight} />
             </div>
           </>
         )
