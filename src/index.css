@@ -381,6 +381,16 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
 .nut-badge--floor    { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
 .nut-badge--ceiling  { background: #FFF7ED; color: #C2410C; border-color: #FED7AA; }
 .nut-badge--flex     { background: var(--bg); color: var(--muted); border-color: var(--border); }
+.week-tag {
+  font-size: 0.56rem;
+  font-weight: 600;
+  color: var(--subtle);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
 
 /* ── Doporučení dne ──────────────────────────────────────────────────── */
 .reco-card {

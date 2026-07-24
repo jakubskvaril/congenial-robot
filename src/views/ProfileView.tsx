@@ -1,17 +1,29 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useWeightsStore } from '../store/weights';
 import { useHealthStore } from '../store/health';
+import { useLogsStore } from '../store/logs';
 import { getEnergy } from '../utils/energy';
-import { todayISO } from '../utils/nutrients';
+import { todayISO, avgNutrientsPerDay, loggedDays } from '../utils/nutrients';
+import { computeLifetimeStats } from '../utils/lifetime';
+import { dailyTargets, dailyCeilings } from '../utils/nutrientStatus';
 import { BOB } from '../types';
 import { WeightChart } from '../components/WeightChart';
+import { NutrientAverages } from '../components/NutrientAverages';
 import { RemindersSettings } from '../components/RemindersSettings';
 import { PetSharing } from '../components/PetSharing';
 import type { HealthRecord } from '../types';
 
+type Section = 'stats' | 'weight' | 'health' | 'reminders' | 'sharing';
+
 interface ProfileViewProps {
   onAddWeight: () => void;
 }
+
+const fmtBig = (n: number) => {
+  if (n < 10_000) return String(n);
+  const k = n / 1000;
+  return k >= 99.95 ? `${Math.round(k)}k` : `${k.toFixed(1)}k`;
+};
 
 export function ProfileView({ onAddWeight }: ProfileViewProps) {
   const weights = useWeightsStore(s => s.weights);
@@ -19,13 +31,24 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
   const records = useHealthStore(s => s.records);
   const addRecord = useHealthStore(s => s.addRecord);
   const removeRecord = useHealthStore(s => s.removeRecord);
-  const [activeSection, setActiveSection] = useState<'weight' | 'health' | 'reminders' | 'sharing'>('weight');
+  const logs = useLogsStore(s => s.logs);
+  const [activeSection, setActiveSection] = useState<Section>('stats');
   const [healthType, setHealthType] = useState<HealthRecord['type']>('vet');
   const [healthDesc, setHealthDesc] = useState('');
   const [healthDate, setHealthDate] = useState(todayISO());
 
   const latestWeight = weights.length > 0 ? weights[weights.length - 1].kg : null;
   const energy = getEnergy(latestWeight ?? 1.5);
+  const stage = energy.lifeStage === 'kitten' ? 'kitten' : 'adult';
+
+  // ── Statistiky ──
+  const stats = useMemo(() => computeLifetimeStats(logs), [logs]);
+  const allDays = useMemo(() => loggedDays(logs), [logs]);
+  const lifetimeAvg = useMemo(() => avgNutrientsPerDay(logs, allDays), [logs, allDays]);
+  const weekAvg = useMemo(() => avgNutrientsPerDay(logs, allDays.slice(-7)), [logs, allDays]);
+  const targets = useMemo(() => dailyTargets(energy.kcal, stage), [energy.kcal, stage]);
+  const ceilings = useMemo(() => dailyCeilings(energy.kcal), [energy.kcal]);
+  const avgKcalDay = stats.totalDaysLogged > 0 ? Math.round(stats.totalKcal / stats.totalDaysLogged) : 0;
 
   function handleAddHealth(e: React.FormEvent) {
     e.preventDefault();
@@ -71,20 +94,82 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
 
       {/* Section tabs */}
       <div style={{ display: 'flex', gap: 0, background: 'var(--surface)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
-        {(['weight', 'health', 'reminders', 'sharing'] as const).map(s => (
+        {(['stats', 'weight', 'health', 'reminders', 'sharing'] as const).map(s => (
           <button key={s} type="button"
             onClick={() => setActiveSection(s)}
             style={{
-              flex: 1, padding: '10px 4px', border: 'none',
+              flex: 1, padding: '10px 2px', border: 'none',
               background: activeSection === s ? 'var(--primary)' : 'transparent',
               color: activeSection === s ? 'white' : 'var(--muted)',
-              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.68rem',
             }}
           >
-            {s === 'weight' ? '⚖️ Váha' : s === 'health' ? '🏥 Zdraví' : s === 'reminders' ? '🔔 Alarm' : '☁️ Sync'}
+            {s === 'stats' ? '📊 Přehled' : s === 'weight' ? '⚖️ Váha' : s === 'health' ? '🏥 Zdraví' : s === 'reminders' ? '🔔 Alarm' : '☁️ Sync'}
           </button>
         ))}
       </div>
+
+      {activeSection === 'stats' && (
+        stats.totalDaysLogged === 0 ? (
+          <div className="empty-state">
+            <p>📊 Zatím žádná data</p>
+            <p className="help-text">Začni zapisovat Bobova jídla v Deníku.</p>
+          </div>
+        ) : (
+          <>
+            {/* Dlouhodobé statistiky */}
+            <div className="stat-strip">
+              <div className="stat-chip">
+                <div className="stat-chip-icon">📅</div>
+                <div className="stat-chip-value">{stats.totalDaysLogged}</div>
+                <div className="stat-chip-label">dní sledování</div>
+              </div>
+              <div className="stat-chip">
+                <div className="stat-chip-icon">📈</div>
+                <div className="stat-chip-value">{avgKcalDay}</div>
+                <div className="stat-chip-label">kcal / den ø</div>
+              </div>
+              <div className="stat-chip">
+                <div className="stat-chip-icon">🍽️</div>
+                <div className="stat-chip-value">{fmtBig(stats.totalMeals)}</div>
+                <div className="stat-chip-label">jídel celkem</div>
+              </div>
+              <div className="stat-chip">
+                <div className="stat-chip-icon">🔥</div>
+                <div className="stat-chip-value">{fmtBig(stats.totalKcal)}</div>
+                <div className="stat-chip-label">kcal celkem</div>
+              </div>
+              {stats.topMeats[0] && (
+                <div className="stat-chip">
+                  <div className="stat-chip-icon">🏆</div>
+                  <div className="stat-chip-value" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                    {stats.topMeats[0].name}
+                  </div>
+                  <div className="stat-chip-label">nejoblíbenější</div>
+                </div>
+              )}
+            </div>
+
+            {/* Týdenní průměr na den */}
+            <div className="card">
+              <div className="section-title" style={{ marginBottom: 2 }}>Týdenní průměr na den</div>
+              <p className="help-text" style={{ marginBottom: 10 }}>
+                Posledních {Math.min(allDays.length, 7)} dní — takhle Bob reálně jí
+              </p>
+              <NutrientAverages avg={weekAvg} targets={targets} ceilings={ceilings} />
+            </div>
+
+            {/* Celoživotní průměr na den */}
+            <div className="card">
+              <div className="section-title" style={{ marginBottom: 2 }}>Celoživotní průměr na den</div>
+              <p className="help-text" style={{ marginBottom: 10 }}>
+                Za všech {stats.totalDaysLogged} sledovaných dní
+              </p>
+              <NutrientAverages avg={lifetimeAvg} targets={targets} ceilings={ceilings} />
+            </div>
+          </>
+        )
+      )}
 
       {activeSection === 'weight' && (
         <>

@@ -115,3 +115,34 @@ export function sumNutrients(entries: LogEntry[]) {
 export function getMeatById(id: string): MeatItem | undefined {
   return MEATS.find(m => m.id === id);
 }
+
+/** Seřazené datumy dnů, které mají aspoň jeden záznam. */
+export function loggedDays(logs: Record<string, LogEntry[]>): string[] {
+  return Object.keys(logs).filter(d => (logs[d]?.length ?? 0) > 0).sort();
+}
+
+export type NutrientSum = ReturnType<typeof sumNutrients>;
+
+/** Průměr živin na den přes zadané dny (prázdné → nuly). */
+export function avgNutrientsPerDay(
+  logs: Record<string, LogEntry[]>,
+  days: string[],
+): NutrientSum {
+  const acc = sumNutrients([]); // nulový základ
+  if (days.length === 0) return acc;
+  for (const d of days) {
+    const s = sumNutrients(logs[d] ?? []);
+    for (const key of Object.keys(acc) as (keyof NutrientSum)[]) {
+      if (key === 'caP_ratio') continue;
+      acc[key] += s[key];
+    }
+  }
+  const n = days.length;
+  for (const key of Object.keys(acc) as (keyof NutrientSum)[]) {
+    if (key === 'caP_ratio') continue;
+    acc[key] = Math.round((acc[key] / n) * 100) / 100;
+  }
+  acc.caP_ratio = acc.phosphorus_mg > 0
+    ? Math.round((acc.calcium_mg / acc.phosphorus_mg) * 100) / 100 : 0;
+  return acc;
+}

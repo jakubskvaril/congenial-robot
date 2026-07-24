@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { EnergyResult, MeatItem } from '../types';
 import { useLogsStore } from '../store/logs';
-import { sumNutrients, todayISO, logMeat } from '../utils/nutrients';
-import { computeLifetimeStats } from '../utils/lifetime';
+import { sumNutrients, todayISO, logMeat, avgNutrientsPerDay, loggedDays } from '../utils/nutrients';
 import { recommendDay, weeklyLowNutrients } from '../utils/recommend';
-import { NRC_PER_1000KCAL, NRC_SUL_PER_1000KCAL } from '../data/nrc';
+import { NUTRIENT_CLASSES } from '../data/nrc';
+import { NUTRIENT_META, dailyTargets, dailyCeilings } from '../utils/nutrientStatus';
 import { KcalRing } from '../components/KcalRing';
 import { NutrientBars } from '../components/NutrientBars';
 import { AddFoodModal } from '../modals/AddFoodModal';
@@ -17,13 +17,14 @@ function foodEmoji(m: MeatItem): string {
   return '🥩';
 }
 
+const labelOf = (key: string) => NUTRIENT_META.find(m => m.key === key)?.label ?? key;
+
 interface DiaryViewProps {
   energy: EnergyResult;
 }
 
 export function DiaryView({ energy }: DiaryViewProps) {
   // PWA zkratka "Přidat krmení" (?action=add z manifestu) otevře modal rovnou.
-  // Initializer musí být čistý (StrictMode ho spouští 2×) — URL čistí až effect.
   const [addOpen, setAddOpen] = useState(
     () => new URLSearchParams(window.location.search).get('action') === 'add'
   );
@@ -39,31 +40,20 @@ export function DiaryView({ energy }: DiaryViewProps) {
   const entries = useMemo(() => logs[today] ?? [], [logs, today]);
   const sorted = useMemo(() => [...entries].sort((a, b) => a.time.localeCompare(b.time)), [entries]);
   const nutrients = useMemo(() => sumNutrients(entries), [entries]);
-  const stats = useMemo(() => computeLifetimeStats(logs), [logs]);
 
   const stage = energy.lifeStage === 'kitten' ? 'kitten' : 'adult';
-  const perKcal = NRC_PER_1000KCAL;
-  const k = energy.kcal / 1000;
-  const targets = {
-    protein_g: perKcal.protein_g[stage] * k,
-    calcium_mg: perKcal.calcium_mg[stage] * k,
-    phosphorus_mg: perKcal.phosphorus_mg[stage] * k,
-    taurin_mg: perKcal.taurin_mg[stage] * k,
-    vitA_IU: perKcal.vitA_IU[stage] * k,
-    vitD3_IU: perKcal.vitD3_IU[stage] * k,
-    vitE_mg: perKcal.vitE_mg[stage] * k,
-    iron_mg: perKcal.iron_mg[stage] * k,
-    zinc_mg: perKcal.zinc_mg[stage] * k,
-    omega3_mg: perKcal.omega3_mg[stage] * k,
-  };
+  const targets = dailyTargets(energy.kcal, stage);
+  const ceilings = dailyCeilings(energy.kcal);
 
-  // Bezpečné horní limity škálované na denní kcal (jen kde existují)
-  const ceilings: Record<string, number> = {};
-  for (const [key, per1000] of Object.entries(NRC_SUL_PER_1000KCAL)) {
-    ceilings[key] = per1000 * k;
-  }
+  // Týdenní průměr na den (posledních 7 zaznamenaných dní) — pro orientační živiny
+  const last7 = useMemo(() => loggedDays(logs).slice(-7), [logs]);
+  const weekAvg = useMemo(() => avgNutrientsPerDay(logs, last7), [logs, last7]);
+  const haveWeek = last7.length >= 3;
+  const weeklyAvgMap = haveWeek
+    ? Object.fromEntries(NUTRIENT_META.map(m => [m.key, weekAvg[m.key] as number]))
+    : undefined;
 
-  // Doporučení na zbytek dne — co dodat, aby se tabulky naplnily
+  // Doporučení na zbytek dne
   const weeklyLow = useMemo(() => weeklyLowNutrients(logs, stage), [logs, stage]);
   const recos = useMemo(
     () => recommendDay(nutrients, targets, energy.kcal - nutrients.kcal, weeklyLow),
@@ -72,9 +62,18 @@ export function DiaryView({ energy }: DiaryViewProps) {
   );
 
   function quickAdd(meat: MeatItem, grams: number) {
-    // Doplňky bez Felini; masa s Felini (dopočítá Ca:P)
     addEntry(logMeat(meat, grams, meat.kind !== 'supplement'));
   }
+
+  // Klíčové (min./přesně/strop) živiny pod cílem dnes; orientační podle týdne
+  const keyShort = NUTRIENT_META
+    .filter(m => NUTRIENT_CLASSES[m.key] !== 'flex')
+    .filter(m => (nutrients[m.key] as number) < targets[m.key])
+    .map(m => m.key);
+  const flexShort = NUTRIENT_META
+    .filter(m => NUTRIENT_CLASSES[m.key] === 'flex')
+    .filter(m => (haveWeek ? (weekAvg[m.key] as number) : (nutrients[m.key] as number)) < targets[m.key])
+    .map(m => m.key);
 
   const r = nutrients.caP_ratio;
   const caPColor: 'good' | 'warn' | 'bad' | 'none' =
@@ -82,20 +81,6 @@ export function DiaryView({ energy }: DiaryViewProps) {
     : r >= 1.2 && r <= 1.4 ? 'good'
     : (r >= 1.0 && r < 1.2) || (r > 1.4 && r <= 1.6) ? 'warn'
     : 'bad';
-
-  const avgKcalDay = stats.totalDaysLogged > 0
-    ? Math.round(stats.totalKcal / stats.totalDaysLogged)
-    : 0;
-
-  const fmtBig = (n: number) => {
-    if (n < 10_000) return String(n);
-    const k = n / 1000;
-    return k >= 99.95 ? `${Math.round(k)}k` : `${k.toFixed(1)}k`;
-  };
-  // Taurin adaptivně: do 1 g v mg (jinak by první týden ukazoval "0 g")
-  const taurinLabel = stats.totalTaurin_mg < 1000
-    ? `${Math.round(stats.totalTaurin_mg)} mg`
-    : `${(stats.totalTaurin_mg / 1000).toFixed(1)} g`;
 
   return (
     <div className="view">
@@ -132,88 +117,60 @@ export function DiaryView({ energy }: DiaryViewProps) {
         </button>
       </div>
 
-      {/* ── Dlouhodobé statistiky ── */}
-      {stats.totalDaysLogged > 0 && (
-        <div>
-          <div className="section-title" style={{ marginBottom: 8 }}>Bob dlouhodobě</div>
-          <div className="stat-strip">
-            <div className="stat-chip">
-              <div className="stat-chip-icon">📅</div>
-              <div className="stat-chip-value">{stats.totalDaysLogged}</div>
-              <div className="stat-chip-label">dní sledování</div>
+      {/* ── Doporučení / stav na zbytek dne ── */}
+      {entries.length > 0 && (
+        recos.length > 0 ? (
+          <div className="reco-card">
+            <div className="section-title" style={{ marginBottom: 4, color: 'var(--accent)' }}>
+              💡 Dodej na zbytek dne
             </div>
-            <div className="stat-chip">
-              <div className="stat-chip-icon">📈</div>
-              <div className="stat-chip-value">{avgKcalDay}</div>
-              <div className="stat-chip-label">kcal / den ø</div>
-            </div>
-            <div className="stat-chip">
-              <div className="stat-chip-icon">🍽️</div>
-              <div className="stat-chip-value">{fmtBig(stats.totalMeals)}</div>
-              <div className="stat-chip-label">jídel celkem</div>
-            </div>
-            <div className="stat-chip">
-              <div className="stat-chip-icon">🔥</div>
-              <div className="stat-chip-value">{fmtBig(stats.totalKcal)}</div>
-              <div className="stat-chip-label">kcal celkem</div>
-            </div>
-            <div className="stat-chip">
-              <div className="stat-chip-icon">💊</div>
-              <div className="stat-chip-value">{taurinLabel}</div>
-              <div className="stat-chip-label">taurinu</div>
-            </div>
-            {stats.topMeats[0] && (
-              <div className="stat-chip">
-                <div className="stat-chip-icon">🏆</div>
-                <div className="stat-chip-value" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                  {stats.topMeats[0].name}
+            <p className="help-text" style={{ marginBottom: 8 }}>
+              Ať Bob naplní tabulky — návrh podle dnešního deficitu
+              {weeklyLow.size > 0 ? ' i dlouhodobě chybějících hodnot' : ''}:
+            </p>
+            {recos.map((s, i) => (
+              <div key={i} className="reco-item">
+                <div className="reco-emoji">{foodEmoji(s.meat)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
+                    {s.grams} g {s.meat.name.replace(/\s*\(.*?\)/, '')}
+                  </div>
+                  <div className="help-text">
+                    {s.kcal} kcal{s.fills.length > 0 ? ` · doplní ${s.fills.join(' + ')}` : ''}
+                  </div>
                 </div>
-                <div className="stat-chip-label">nejoblíbenější</div>
+                <button type="button" className="reco-add-btn" title="Přidat"
+                  onClick={() => quickAdd(s.meat, s.grams)}>＋</button>
               </div>
-            )}
+            ))}
           </div>
-        </div>
-      )}
-
-      {/* ── Doporučení na zbytek dne ── */}
-      {entries.length > 0 && recos.length > 0 && (
-        <div className="reco-card">
-          <div className="section-title" style={{ marginBottom: 4, color: 'var(--accent)' }}>
-            💡 Dodej na zbytek dne
+        ) : keyShort.length === 0 ? (
+          <div className="reco-card" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.4rem' }}>✅</div>
+            <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
+              {flexShort.length === 0 ? 'Tabulky jsou naplněné' : 'Klíčové živiny v pořádku'}
+            </p>
+            <p className="help-text">
+              {flexShort.length === 0
+                ? 'Bob má dnes vše důležité v normě.'
+                : `${flexShort.map(labelOf).join(' a ')} klidně doženeš zítra — je to orientační živina.`}
+            </p>
           </div>
-          <p className="help-text" style={{ marginBottom: 8 }}>
-            Ať Bob naplní tabulky — návrh podle dnešního deficitu
-            {weeklyLow.size > 0 ? ' i dlouhodobě chybějících hodnot' : ''}:
-          </p>
-          {recos.map((s, i) => (
-            <div key={i} className="reco-item">
-              <div className="reco-emoji">{foodEmoji(s.meat)}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
-                  {s.grams} g {s.meat.name.replace(/\s*\(.*?\)/, '')}
-                </div>
-                <div className="help-text">
-                  {s.kcal} kcal{s.fills.length > 0 ? ` · doplní ${s.fills.join(' + ')}` : ''}
-                </div>
-              </div>
-              <button type="button" className="reco-add-btn" title="Přidat"
-                onClick={() => quickAdd(s.meat, s.grams)}>＋</button>
-            </div>
-          ))}
-        </div>
-      )}
-      {entries.length > 0 && recos.length === 0 && (
-        <div className="reco-card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '1.4rem' }}>✅</div>
-          <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>Tabulky jsou naplněné</p>
-          <p className="help-text">Bob má dnes klíčové živiny v pořádku.</p>
-        </div>
+        ) : (
+          <div className="reco-card" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.4rem' }}>🍽️</div>
+            <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>Denní kalorie vyčerpané</p>
+            <p className="help-text">
+              Ještě chybí {keyShort.map(labelOf).join(', ')} — doplň zítra ráno, ať Bob nepřekrmíš.
+            </p>
+          </div>
+        )
       )}
 
       {/* ── Denní nutrienty ── */}
       <div className="card">
         <div className="section-title" style={{ marginBottom: 10 }}>Denní nutrienty vs. NRC 2006</div>
-        <NutrientBars nutrients={nutrients} targets={targets} ceilings={ceilings} />
+        <NutrientBars nutrients={nutrients} targets={targets} ceilings={ceilings} weeklyAvg={weeklyAvgMap} />
       </div>
 
       {/* ── Dnešní jídla ── */}
