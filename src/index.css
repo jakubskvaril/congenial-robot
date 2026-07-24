@@ -435,15 +435,27 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   color: var(--muted);
 }
 .nutrient-bar-track {
+  position: relative;
   background: var(--border);
   border-radius: 999px;
-  height: 5px;
+  height: 6px;
   overflow: hidden;
 }
 .nutrient-bar-fill {
   height: 100%;
   border-radius: 999px;
   transition: width 0.7s var(--ease-out), background-color 0.3s;
+}
+/* Značka doporučené dávky (RA) na stupnici ke stropu */
+.nutrient-bar-tick {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--text);
+  opacity: 0.35;
+  transform: translateX(-1px);
 }
 
 /* ── Ca:P badge ──────────────────────────────────────────────────────── */

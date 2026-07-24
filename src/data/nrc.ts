@@ -59,6 +59,25 @@ export const CLASS_INFO: Record<NutrientClass, { badge: string; hint: string }> 
   flex:     { badge: '≈ orientačně', hint: 'Stačí dlouhodobý průměr' },
 };
 
+/**
+ * Bezpečné horní limity (Safe Upper Limit) per 1000 kcal ME.
+ * Nad touto hranicí hrozí toxicita (hypervitaminóza / předávkování).
+ * Zdroj: NRC 2006 SUL, převedeno na 1000 kcal; u nejistých hodnot zvoleno
+ * konzervativně (radši varovat dřív). Nutrienty bez záznamu nemají praktický
+ * strop v běžné stravě.
+ */
+export const NRC_SUL_PER_1000KCAL: Record<string, number> = {
+  // Vit. A: hypervitaminóza A (krční exostózy) z jaterních diet. RA 3334 →
+  // strop ~10× RA (běžně uváděná bezpečná hranice pro kočky)
+  vitA_IU:  33333,
+  // Vit. D3: předávkování → hyperkalcémie. Konzervativní praktický strop
+  vitD3_IU: 1800,
+  // Zinek: NRC SUL ~600 mg/kg diety ÷ 4
+  zinc_mg:  150,
+  // Železo: NRC SUL ~800 mg/kg diety ÷ 4
+  iron_mg:  200,
+};
+
 export const NUTRIENT_LABELS: Record<string, string> = {
   protein_g:     'Bílkoviny',
   calcium_mg:    'Vápník',

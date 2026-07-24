@@ -5,11 +5,18 @@ interface KcalRingProps {
 }
 
 export function KcalRing({ value, max, size = 120 }: KcalRingProps) {
-  const pct = max > 0 ? Math.min(value / max, 1.2) : 0;
+  const ratio = max > 0 ? value / max : 0;
+  const pct = Math.min(ratio, 1.2);
   const r = 46;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - Math.min(pct, 1));
-  const color = pct > 1.1 ? '#B91C1C' : pct > 0.9 ? '#15803D' : '#B8922A';
+  // Mírné překročení není poplach: zelená 85–115 %, jemný jantar do 130 %,
+  // červená až nad 130 %; pod 85 % jantar (ještě nedojedeno)
+  const color =
+    ratio > 1.3 ? '#C2410C'
+    : ratio > 1.15 ? '#C99A2E'
+    : ratio >= 0.85 ? '#3F9E5A'
+    : '#B8922A';
 
   return (
     <div className="kcal-ring" style={{ width: size, height: size }}>

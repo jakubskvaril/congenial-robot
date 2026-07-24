@@ -4,7 +4,7 @@ import { useLogsStore } from '../store/logs';
 import { sumNutrients, todayISO, logMeat } from '../utils/nutrients';
 import { computeLifetimeStats } from '../utils/lifetime';
 import { recommendDay, weeklyLowNutrients } from '../utils/recommend';
-import { NRC_PER_1000KCAL } from '../data/nrc';
+import { NRC_PER_1000KCAL, NRC_SUL_PER_1000KCAL } from '../data/nrc';
 import { KcalRing } from '../components/KcalRing';
 import { NutrientBars } from '../components/NutrientBars';
 import { AddFoodModal } from '../modals/AddFoodModal';
@@ -56,6 +56,12 @@ export function DiaryView({ energy }: DiaryViewProps) {
     zinc_mg: perKcal.zinc_mg[stage] * k,
     omega3_mg: perKcal.omega3_mg[stage] * k,
   };
+
+  // Bezpečné horní limity škálované na denní kcal (jen kde existují)
+  const ceilings: Record<string, number> = {};
+  for (const [key, per1000] of Object.entries(NRC_SUL_PER_1000KCAL)) {
+    ceilings[key] = per1000 * k;
+  }
 
   // Doporučení na zbytek dne — co dodat, aby se tabulky naplnily
   const weeklyLow = useMemo(() => weeklyLowNutrients(logs, stage), [logs, stage]);
@@ -207,7 +213,7 @@ export function DiaryView({ energy }: DiaryViewProps) {
       {/* ── Denní nutrienty ── */}
       <div className="card">
         <div className="section-title" style={{ marginBottom: 10 }}>Denní nutrienty vs. NRC 2006</div>
-        <NutrientBars nutrients={nutrients} targets={targets} />
+        <NutrientBars nutrients={nutrients} targets={targets} ceilings={ceilings} />
       </div>
 
       {/* ── Dnešní jídla ── */}
