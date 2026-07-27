@@ -29,7 +29,20 @@ export interface MeatItem {
   defaultGrams?: number;
   /** Kategorie pro nabídku v modalu */
   kind?: 'meat' | 'supplement';
+  /** Skupina v nabídce (drůbež, hovězí…) */
+  category?: MeatCategory;
 }
+
+export type MeatCategory = 'poultry' | 'beef' | 'pork' | 'fish' | 'other' | 'supplement';
+
+export const MEAT_CATEGORY_LABELS: Record<MeatCategory, string> = {
+  poultry:    '🍗 Drůbež',
+  beef:       '🐄 Hovězí',
+  pork:       '🐷 Vepřové',
+  fish:       '🐟 Ryby',
+  other:      '🥩 Ostatní',
+  supplement: '🥚 Vejce a doplňky',
+};
 
 export interface LogEntry {
   id: string;

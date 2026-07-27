@@ -116,6 +116,31 @@ export function getMeatById(id: string): MeatItem | undefined {
   return MEATS.find(m => m.id === id);
 }
 
+/**
+ * ID nejčastěji zapisovaných jídel (nejnovější zápisy váží víc).
+ * Používá se pro sekci "Nejčastější" ve výběru masa.
+ */
+export function topLoggedFoodIds(
+  logs: Record<string, LogEntry[]>,
+  known: Map<string, string>, // název → id
+  limit = 3,
+): string[] {
+  const score: Record<string, number> = {};
+  const days = Object.keys(logs).sort().slice(-60); // poslední 2 měsíce stačí
+  for (const d of days) {
+    for (const e of logs[d] ?? []) {
+      if (e.type !== 'meat') continue;
+      const id = known.get(e.name);
+      if (!id) continue;
+      score[id] = (score[id] ?? 0) + 1;
+    }
+  }
+  return Object.entries(score)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([id]) => id);
+}
+
 /** Seřazené datumy dnů, které mají aspoň jeden záznam. */
 export function loggedDays(logs: Record<string, LogEntry[]>): string[] {
   return Object.keys(logs).filter(d => (logs[d]?.length ?? 0) > 0).sort();

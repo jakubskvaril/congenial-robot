@@ -55,14 +55,47 @@ export const NUTRIENT_META: NutrientMeta[] = [
   { key: 'zinc_mg',       label: 'Zinek',     unit: 'mg', decimals: 1 },
 ];
 
-export type BadgeTone = 'neutral' | 'amber' | 'red' | 'default';
+/**
+ * Skupiny místo odznaků u každého řádku — orientaci dá jeden nadpis,
+ * ne devět barevných štítků u jednotlivých živin.
+ */
+export interface NutrientGroup {
+  title: string;
+  note: string;
+  keys: NutrientKey[];
+}
+
+export const NUTRIENT_GROUPS: NutrientGroup[] = [
+  {
+    title: 'Musí být splněno',
+    note: 'nesmí chybět, přebytek se vyloučí',
+    keys: ['protein_g', 'taurin_mg'],
+  },
+  {
+    title: 'Trefit rozmezí',
+    note: 'málo i moc škodí',
+    keys: ['calcium_mg', 'phosphorus_mg', 'vitD3_IU'],
+  },
+  {
+    title: 'Hlídat strop',
+    note: 'přebytek se v těle kumuluje',
+    keys: ['vitA_IU'],
+  },
+  {
+    title: 'Dlouhodobě',
+    note: 'průměr za 7 dní — jeden den nerozhoduje',
+    keys: ['omega3_mg', 'iron_mg', 'zinc_mg'],
+  },
+];
 
 export interface NutrientStatus {
   color: string;
-  primary: string;     // barevný text vpravo
-  fillFrac: number;    // 0..1 výplň baru
-  raTickFrac?: number; // pozice značky doporučené dávky (u stropových)
-  badgeTone: BadgeTone;
+  /** Krátký stav vpravo — bez emoji, bez procent stropu */
+  primary: string;
+  /** 0..1 výplň baru — VŽDY vůči doporučené denní dávce */
+  fillFrac: number;
+  /** Podrobnost do tooltipu (např. vzdálenost k bezpečnému stropu) */
+  detail?: string;
   belowTarget: boolean;
   cls: NutrientClass;
 }
@@ -70,8 +103,9 @@ export interface NutrientStatus {
 const pct = (x: number) => Math.round(x * 100);
 
 /**
- * Vyhodnotí jeden nutrient vůči doporučené dávce (target) a bezpečnému
- * stropu (sul). U vitaminů A/D řídí stupnici strop, ne doporučená dávka.
+ * Vyhodnotí nutrient vůči doporučené dávce. Stupnice je jednotná (% dávky);
+ * bezpečný strop (sul) ovlivňuje jen barvu a slovní hodnocení, ne měřítko —
+ * dvě různá měřítka v jednom grafu byla matoucí.
  */
 export function nutrientStatus(
   key: string,
@@ -81,40 +115,27 @@ export function nutrientStatus(
 ): NutrientStatus {
   const cls = NUTRIENT_CLASSES[key] ?? 'flex';
   const rt = target > 0 ? value / target : 0;
-  const excessMatters = cls === 'ceiling' || cls === 'critical';
-  const byCeiling = !!sul && excessMatters;
   const rs = sul ? value / sul : 0;
-  const raTick = byCeiling ? target / sul! : undefined;
   const belowTarget = value < target;
+  const detail = sul ? `${pct(rs)} % bezpečného stropu` : undefined;
+  const base = { belowTarget, cls, detail, fillFrac: Math.min(rt, 1) };
 
-  // Odznak u stropových vitaminů reaguje na blízkost stropu (ne na překročení RA)
-  let badgeTone: BadgeTone = 'default';
-  if (cls === 'ceiling' && sul) {
-    badgeTone = rs >= 0.9 ? 'red' : rs >= 0.7 ? 'amber' : 'neutral';
-  }
-
-  const base = { badgeTone, belowTarget, cls };
-
-  // ── Deficit ──
+  // ── Pod doporučenou dávkou ──
   if (belowTarget) {
     const missing = pct(1 - rt);
     if (cls === 'flex') {
-      return { ...base, color: AMBER, primary: rt >= 0.6 ? `zbývá ${missing} %` : `chybí ${missing} %`, fillFrac: rt };
+      return { ...base, color: AMBER, primary: `chybí ${missing} %` };
     }
-    const color = rt < 0.7 ? RED : AMBER;
-    return { ...base, color, primary: `chybí ${missing} %`, fillFrac: byCeiling ? rs : rt, raTickFrac: raTick };
+    return { ...base, color: rt < 0.7 ? RED : AMBER, primary: `chybí ${missing} %` };
   }
 
-  // ── Dostatečné až nadbytek ──
-  if (byCeiling) {
-    if (rs <= 0.7) return { ...base, color: GREEN, primary: `${pct(rs)} % stropu`, fillFrac: rs, raTickFrac: raTick };
-    if (rs < 1)    return { ...base, color: AMBER, primary: `${pct(rs)} % stropu`, fillFrac: rs, raTickFrac: raTick };
-    return { ...base, color: RED, primary: 'nad strop!', fillFrac: 1, raTickFrac: raTick };
+  // ── Splněno až nadbytek ──
+  if (sul) {
+    if (rs >= 1)   return { ...base, color: RED,   primary: 'nad stropem', fillFrac: 1 };
+    if (rs >= 0.7) return { ...base, color: AMBER, primary: 'blízko stropu', fillFrac: 1 };
   }
-  if (cls === 'critical') {
-    if (rt <= 1.3) return { ...base, color: GREEN, primary: 'v normě', fillFrac: Math.min(rt, 1) };
+  if (cls === 'critical' && rt > 1.3) {
     return { ...base, color: AMBER, primary: `+${pct(rt - 1)} % nad`, fillFrac: 1 };
   }
-  if (sul && rs > 1) return { ...base, color: RED, primary: 'nad strop!', fillFrac: 1 };
-  return { ...base, color: GREEN, primary: '✓ splněno', fillFrac: 1 };
+  return { ...base, color: GREEN, primary: cls === 'critical' ? 'v normě' : 'splněno', fillFrac: 1 };
 }

@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import type { EnergyResult, MeatItem } from '../types';
+import { useMemo, useState } from 'react';
+import type { EnergyResult, MeatItem, MeatCategory } from '../types';
+import { MEAT_CATEGORY_LABELS } from '../types';
 import { useLogsStore } from '../store/logs';
 import { usePouchesStore } from '../store/pouches';
 import { useCustomMeatsStore } from '../store/customMeats';
 import { MEATS, SUPPLEMENTS } from '../data/meats';
-import { logMeat, logPouch, logFelini } from '../utils/nutrients';
+import { logMeat, logPouch, logFelini, topLoggedFoodIds } from '../utils/nutrients';
 import { calcFeliniDose } from '../utils/felini';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 import { lookupEanAsMeat, isStoreInternalEan, suggestSimilarMeat, type MeatDraft } from '../utils/barcode';
@@ -26,11 +27,30 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
   const customMeats = useCustomMeatsStore(s => s.meats);
   const addCustomMeat = useCustomMeatsStore(s => s.addMeat);
 
-  const allMeats: MeatItem[] = [
-    ...MEATS,
-    ...SUPPLEMENTS,
-    ...customMeats,
-  ];
+  const logs = useLogsStore(s => s.logs);
+
+  const allMeats: MeatItem[] = useMemo(
+    () => [...MEATS, ...SUPPLEMENTS, ...customMeats],
+    [customMeats],
+  );
+
+  // Nejčastěji zapisovaná jídla — nahoru do samostatné skupiny
+  const topIds = useMemo(() => {
+    const byName = new Map(allMeats.map(m => [m.name, m.id]));
+    return topLoggedFoodIds(logs, byName, 3);
+  }, [logs, allMeats]);
+
+  // Zbytek seskupený podle druhu (drůbež, hovězí…)
+  const grouped = useMemo(() => {
+    const order: MeatCategory[] = ['poultry', 'beef', 'pork', 'fish', 'other', 'supplement'];
+    const map = new Map<MeatCategory, MeatItem[]>();
+    for (const m of [...MEATS, ...SUPPLEMENTS]) {
+      const cat = m.category ?? 'other';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(m);
+    }
+    return order.filter(c => map.has(c)).map(c => ({ cat: c, items: map.get(c)! }));
+  }, []);
 
   // ── Meat state ──────────────────────────────────────────────────────
   const [meatId, setMeatId] = useState(MEATS[0].id);
@@ -417,14 +437,21 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
                 <div className="form-group">
                   <label>Druh masa / doplněk</label>
                   <select value={meatId} onChange={e => handleMeatChange(e.target.value)}>
-                    <optgroup label="Vestavěná masa">
-                      {MEATS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </optgroup>
-                    <optgroup label="Vejce a doplňky">
-                      {SUPPLEMENTS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </optgroup>
+                    {topIds.length > 0 && (
+                      <optgroup label="⭐ Nejčastější">
+                        {topIds.map(id => {
+                          const m = allMeats.find(x => x.id === id);
+                          return m ? <option key={`top-${m.id}`} value={m.id}>{m.name}</option> : null;
+                        })}
+                      </optgroup>
+                    )}
+                    {grouped.map(g => (
+                      <optgroup key={g.cat} label={MEAT_CATEGORY_LABELS[g.cat]}>
+                        {g.items.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                      </optgroup>
+                    ))}
                     {customMeats.length > 0 && (
-                      <optgroup label="Moje masa (skenovaná)">
+                      <optgroup label="📷 Moje masa (skenovaná)">
                         {customMeats.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </optgroup>
                     )}
