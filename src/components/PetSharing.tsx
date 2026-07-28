@@ -111,7 +111,7 @@ export function PetSharing() {
                 Pošli tento odkaz partnerovi:
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <code style={{ flex: 1, fontSize: '0.68rem', wordBreak: 'break-all', color: 'var(--gold)' }}>
+                <code style={{ flex: 1, fontSize: '0.7rem', wordBreak: 'break-all', color: 'var(--gold)' }}>
                   {inviteLink}
                 </code>
                 <button
@@ -135,7 +135,7 @@ export function PetSharing() {
               {invites.map(inv => (
                 <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: '0.8rem' }}>
                   <span style={{ flex: 1 }}>{inv.invited_email}</span>
-                  <span style={{ fontSize: '0.7rem', color: inv.accepted_at ? '#4caf50' : 'var(--muted)' }}>
+                  <span style={{ fontSize: '0.7rem', color: inv.accepted_at ? 'var(--green)' : 'var(--muted)' }}>
                     {inv.accepted_at ? '✓ přijato' : '⏳ čeká'}
                   </span>
                   <button type="button" className="btn-icon" onClick={() => handleRevoke(inv.id)} title="Odvolat">✕</button>
@@ -154,7 +154,7 @@ export function PetSharing() {
 
       {/* Sync status + efektivní user ID (debug info) */}
       {effectiveUserId && (
-        <div style={{ fontSize: '0.65rem', color: 'var(--muted)', opacity: 0.5 }}>
+        <div style={{ fontSize: '0.7rem', color: 'var(--muted)', opacity: 0.5 }}>
           Data ID: {effectiveUserId.slice(0, 8)}…
         </div>
       )}

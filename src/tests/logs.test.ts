@@ -64,3 +64,26 @@ describe('addLogEntry', () => {
     expect(a.id).not.toBe(b.id);
   });
 });
+
+describe('felini split in analytics', () => {
+  it('counts felini dosed inside a meat entry into the felini share', () => {
+    // Regrese: feliniDose_g uložený uvnitř meat záznamu se dřív do kategorie
+    // "felini" nezapočítal, takže její podíl byl systematicky podhodnocený.
+    const entries = [
+      { type: 'meat', grams: 100, feliniDose_g: 1.5 },
+      { type: 'meat', grams: 50 },
+      { type: 'felini', grams: 2 },
+    ] as Array<{ type: string; grams: number; feliniDose_g?: number }>;
+
+    const counts: Record<string, number> = { meat: 0, pouch: 0, felini: 0, other: 0 };
+    for (const e of entries) {
+      counts[e.type] = (counts[e.type] ?? 0) + e.grams;
+      if (e.feliniDose_g) {
+        counts.felini += e.feliniDose_g;
+        counts[e.type] -= e.feliniDose_g;
+      }
+    }
+    expect(counts.felini).toBeCloseTo(3.5, 5);  // 2 ručně + 1.5 automaticky
+    expect(counts.meat).toBeCloseTo(148.5, 5);  // 150 − 1.5 (bez dvojího započtení)
+  });
+});

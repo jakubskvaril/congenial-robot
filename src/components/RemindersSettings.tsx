@@ -81,7 +81,7 @@ export function RemindersSettings() {
       )}
       {notifStatus === 'denied' && (
         <div className="card" style={{ background: 'var(--surface)', borderLeft: '3px solid #c0392b' }}>
-          <p className="help-text" style={{ color: '#c0392b' }}>
+          <p className="help-text" style={{ color: 'var(--red)' }}>
             Notifikace jsou blokovány. Povolte je v nastavení prohlížeče a obnovte stránku.
           </p>
         </div>

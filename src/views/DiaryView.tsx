@@ -142,6 +142,7 @@ export function DiaryView({ energy }: DiaryViewProps) {
                   </div>
                 </div>
                 <button type="button" className="reco-add-btn" title="Přidat"
+                  aria-label={`Přidat ${s.grams} g ${s.meat.name}`}
                   onClick={() => quickAdd(s.meat, s.grams)}>＋</button>
               </div>
             ))}
@@ -180,7 +181,7 @@ export function DiaryView({ energy }: DiaryViewProps) {
       {/* ── Denní nutrienty ── */}
       <div className="card">
         <div className="section-title" style={{ marginBottom: 10 }}>Denní nutrienty vs. NRC 2006</div>
-        <NutrientBars nutrients={nutrients} targets={targets} ceilings={ceilings} weeklyAvg={weeklyAvgMap} />
+        <NutrientBars nutrients={nutrients} targets={targets} ceilings={ceilings} weeklyAvg={weeklyAvgMap} entries={entries} />
       </div>
 
       {/* ── Dnešní jídla ── */}
@@ -212,6 +213,7 @@ export function DiaryView({ energy }: DiaryViewProps) {
                 type="button"
                 className="btn-icon"
                 onClick={(ev) => { ev.stopPropagation(); removeEntry(today, e.id); }}
+                aria-label={`Smazat ${e.name}`}
               >✕</button>
             </div>
           ))}

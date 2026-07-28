@@ -108,13 +108,14 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   color: var(--text);
   letter-spacing: -0.015em;
 }
-.bob-subtitle { font-size: 0.68rem; color: var(--muted); }
+.bob-subtitle { font-size: 0.7rem; color: var(--muted); }
 .bob-weight-btn {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: var(--radius-sm);
-  padding: 5px 11px;
+  padding: 8px 12px;
+  min-height: 38px;
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
@@ -145,11 +146,13 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px 4px 8px;
+  justify-content: center;
+  min-height: 52px;
+  padding: 8px 4px;
   border: none;
   background: transparent;
   color: var(--subtle);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -196,7 +199,8 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 11px 18px;
+  padding: 12px 18px;
+  min-height: 44px;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
@@ -219,7 +223,7 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   border: 1px solid var(--border);
 }
 .btn-ghost:active { background: var(--bg); }
-.btn-sm { padding: 6px 12px; font-size: 0.78rem; border-radius: 7px; }
+.btn-sm { padding: 8px 14px; font-size: 0.78rem; border-radius: 7px; min-height: 38px; }
 
 .btn-icon {
   background: none;
@@ -227,11 +231,17 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   cursor: pointer;
   color: var(--subtle);
   font-size: 0.9rem;
-  padding: 4px 6px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-family: inherit;
   transition: color 0.2s, transform 0.15s var(--ease-spring);
   line-height: 1;
+  /* Dotykový terč min. 44×44 (Apple HIG / WCAG 2.5.5) */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .btn-icon:hover { color: var(--red); }
 .btn-icon:active { transform: scale(0.85); }
@@ -360,11 +370,61 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   font-variant-numeric: tabular-nums;
 }
 .stat-chip-label {
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
+}
+
+/* ── Prokliknutelná živina + rozpad zdrojů ───────────────────────────── */
+.nutrient-bar-row--tappable {
+  cursor: pointer;
+  border-radius: 8px;
+  margin: -6px -8px;
+  padding: 6px 8px;
+  transition: background 0.15s;
+}
+.nutrient-bar-row--tappable:active { background: var(--bg); }
+.nutrient-bar-row--tappable:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.nut-chevron {
+  color: var(--subtle);
+  font-size: 0.75rem;
+  margin-left: 5px;
+}
+.nut-sources {
+  margin: 8px 0 2px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fade-up 0.25s var(--ease-out);
+}
+.nut-source-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+.nut-source-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.nut-source-meta { color: var(--subtle); flex-shrink: 0; }
+.nut-source-value {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
 }
 
 /* ── Nutrient group headings ─────────────────────────────────────────── */
@@ -384,7 +444,7 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   letter-spacing: 0.02em;
 }
 .nut-group-note {
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   color: var(--subtle);
 }
 
@@ -421,8 +481,8 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   color: white;
   border: none;
   border-radius: 999px;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   font-size: 1.1rem;
   cursor: pointer;
   display: flex;
@@ -509,7 +569,7 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
   display: block;
   font-variant-numeric: tabular-nums;
 }
-.kcal-ring-sub { font-size: 0.6rem; color: var(--muted); }
+.kcal-ring-sub { font-size: 0.7rem; color: var(--muted); }
 
 /* ── Weight chart ────────────────────────────────────────────────────── */
 .weight-chart-wrap { overflow: hidden; border-radius: var(--radius-sm); }
@@ -525,7 +585,7 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
 .pouch-card:active { transform: scale(0.99); }
 .pouch-card--selected { border-color: var(--text); }
 .pouch-brand {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
@@ -542,7 +602,7 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
 .tag {
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.03em;
 }
@@ -555,7 +615,7 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 600; }
 .help-text   { font-size: 0.75rem; color: var(--muted); }
 .error-text  { color: var(--red); font-size: 0.8rem; }
 .section-title {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--subtle);
   text-transform: uppercase;

@@ -27,11 +27,12 @@ export function dailyCeilings(energyKcal: number): Record<string, number> {
   return out;
 }
 
-// Decentní paleta — červená jen u skutečného rizika
-export const GREEN = '#3F9E5A';
-export const AMBER = '#C99A2E';
-export const RED   = '#C2410C';
-export const NEUTRAL = '#9A948C';
+// Decentní paleta — jediný zdroj je src/theme.ts
+import { STATUS } from '../theme';
+export const GREEN = STATUS.good;
+export const AMBER = STATUS.warn;
+export const RED   = STATUS.bad;
+export const NEUTRAL = STATUS.neutral;
 
 export type NutrientKey = keyof NRCTargets & keyof DailyNutrients;
 

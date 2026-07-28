@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
+import { applyTheme } from './theme';
 import { App } from './App';
 import { initAuth, useAuthStore } from './lib/auth';
 import { initStoreSubscriptions, pullAllFromCloud, resetSyncForUserChange } from './lib/cloudSync';
@@ -18,6 +19,7 @@ useAuthStore.subscribe((state) => {
   }
 });
 
+applyTheme();
 initAuth();
 initStoreSubscriptions();
 startReminderScheduler();

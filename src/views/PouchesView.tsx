@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { usePouchesStore } from '../store/pouches';
 import type { Pouch } from '../types';
 import { AddPouchModal } from '../modals/AddPouchModal';
+import { scoreColor } from '../theme';
 
-function scoreColor(score: number): string {
-  if (score >= 8) return '#15803D';
-  if (score >= 5) return '#B8922A';
-  return '#B91C1C';
-}
+
 
 function PouchCard({ pouch, onRemove, onDecrement }: {
   pouch: Pouch;
@@ -42,7 +39,7 @@ function PouchCard({ pouch, onRemove, onDecrement }: {
           ['Sklad', `${pouch.stockCount ?? 0}ks`],
         ].map(([l, v]) => (
           <div key={l} style={{ background: 'var(--bg)', borderRadius: 6, padding: '4px 6px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.6rem', color: 'var(--muted)', textTransform: 'uppercase' }}>{l}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--muted)', textTransform: 'uppercase' }}>{l}</div>
             <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{v}</div>
           </div>
         ))}

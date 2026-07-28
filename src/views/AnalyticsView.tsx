@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useLogsStore } from '../store/logs';
 import { computeLifetimeStats } from '../utils/lifetime';
+import { CHART_COLORS } from '../theme';
 
 export function AnalyticsView() {
   const logs = useLogsStore(s => s.logs);
@@ -10,12 +11,21 @@ export function AnalyticsView() {
   const pieData = useMemo(() => {
     const allEntries = Object.values(logs).flat();
     const counts: Record<string, number> = { meat: 0, pouch: 0, felini: 0, other: 0 };
-    for (const e of allEntries) counts[e.type] = (counts[e.type] ?? 0) + e.grams;
+    for (const e of allEntries) {
+      counts[e.type] = (counts[e.type] ?? 0) + e.grams;
+      // Felini dávkované automaticky k masu se ukládá dovnitř meat záznamu
+      // (feliniDose_g) — bez tohoto by se do kategorie felini nikdy nezapočítalo
+      // a jeho podíl by byl systematicky podhodnocený.
+      if (e.feliniDose_g) {
+        counts.felini += e.feliniDose_g;
+        counts[e.type] -= e.feliniDose_g; // ať se gramy nezapočítají dvakrát
+      }
+    }
     return [
-      { name: '🥩 Maso', value: counts.meat, color: '#B8922A' },
-      { name: '🥫 Kapsičky', value: counts.pouch, color: '#15803D' },
-      { name: '💊 Felini', value: counts.felini, color: '#1D4ED8' },
-      { name: 'Ostatní', value: counts.other, color: '#A8A29E' },
+      { name: '🥩 Maso', value: Math.round(counts.meat), color: CHART_COLORS.meat },
+      { name: '🥫 Kapsičky', value: Math.round(counts.pouch), color: CHART_COLORS.pouch },
+      { name: '💊 Felini', value: Math.round(counts.felini), color: CHART_COLORS.felini },
+      { name: 'Ostatní', value: Math.round(counts.other), color: CHART_COLORS.other },
     ].filter(d => d.value > 0);
   }, [logs]);
 
@@ -76,11 +86,11 @@ export function AnalyticsView() {
           <div className="section-title" style={{ marginBottom: 10 }}>Průměrné kcal za měsíc</div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={stats.monthlyAvgKcal}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
               <XAxis dataKey="month" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} />
               <Tooltip />
-              <Bar dataKey="avgKcal" fill="#111110" radius={[6,6,0,0]} name="Průměr kcal/den" />
+              <Bar dataKey="avgKcal" fill={CHART_COLORS.actual} radius={[6,6,0,0]} name="Průměr kcal/den" />
             </BarChart>
           </ResponsiveContainer>
         </div>

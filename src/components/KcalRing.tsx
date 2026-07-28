@@ -1,3 +1,4 @@
+import { STATUS, PALETTE } from '../theme';
 interface KcalRingProps {
   value: number;
   max: number;
@@ -13,15 +14,15 @@ export function KcalRing({ value, max, size = 120 }: KcalRingProps) {
   // Mírné překročení není poplach: zelená 85–115 %, jemný jantar do 130 %,
   // červená až nad 130 %; pod 85 % jantar (ještě nedojedeno)
   const color =
-    ratio > 1.3 ? '#C2410C'
-    : ratio > 1.15 ? '#C99A2E'
-    : ratio >= 0.85 ? '#3F9E5A'
-    : '#B8922A';
+    ratio > 1.3 ? STATUS.bad
+    : ratio > 1.15 ? STATUS.warn
+    : ratio >= 0.85 ? STATUS.good
+    : PALETTE.accent;
 
   return (
     <div className="kcal-ring" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r={r} fill="none" stroke="#E8E8E5" strokeWidth="7" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke={PALETTE.border} strokeWidth="7" />
         <circle
           cx="50" cy="50" r={r} fill="none"
           stroke={color} strokeWidth="7"

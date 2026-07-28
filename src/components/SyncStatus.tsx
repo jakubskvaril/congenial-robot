@@ -29,7 +29,7 @@ export function SyncStatus() {
   );
 
   return (
-    <span title="Synchronizace aktivní" style={{ fontSize: '0.7rem', color: '#4caf50', padding: '2px 6px', borderRadius: 10, background: 'var(--surface)', border: '1px solid #4caf5044' }}>
+    <span title="Synchronizace aktivní" style={{ fontSize: '0.7rem', color: 'var(--green)', padding: '2px 6px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)' }}>
       ☁️ sync
     </span>
   );

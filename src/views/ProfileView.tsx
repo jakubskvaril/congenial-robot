@@ -84,7 +84,7 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Denní potřeba</div>
             <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--gold)' }}>{energy.kcal}</div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--muted)' }}>kcal/den (RER×{energy.factor})</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>kcal/den (RER×{energy.factor})</div>
           </div>
         </div>
         {latestWeight && (
@@ -104,7 +104,7 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
               flex: 1, padding: '10px 2px', border: 'none',
               background: activeSection === s ? 'var(--primary)' : 'transparent',
               color: activeSection === s ? 'white' : 'var(--muted)',
-              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.66rem',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.7rem',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}
           >

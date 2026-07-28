@@ -3,6 +3,7 @@ import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Respon
 import type { WeightEntry } from '../types';
 import { BOB } from '../types';
 import { WEIGHT_CURVE_MALE } from '../data/weightCurve';
+import { CHART_COLORS } from '../theme';
 
 interface WeightChartProps {
   weights: WeightEntry[];
@@ -41,7 +42,7 @@ export function WeightChart({ weights }: WeightChartProps) {
     <div className="weight-chart-wrap" data-testid="weight-chart">
       <ResponsiveContainer width="100%" height={250}>
         <ComposedChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
           <XAxis
             dataKey="months"
             type="number"
@@ -53,10 +54,10 @@ export function WeightChart({ weights }: WeightChartProps) {
           <YAxis tick={{ fontSize: 10 }} unit=" kg" />
           <Tooltip formatter={(v: number) => `${v} kg`} labelFormatter={(l: number) => `${l} měs.`} />
           <Legend />
-          <Area type="monotone" dataKey="refHigh" fill="#e8f5e9" stroke="none" name="Ideální pásmo" fillOpacity={0.5} connectNulls />
+          <Area type="monotone" dataKey="refHigh" fill="var(--bg)" stroke="none" name="Ideální pásmo" fillOpacity={0.5} connectNulls />
           <Area type="monotone" dataKey="refLow" fill="var(--bg)" stroke="none" fillOpacity={1} connectNulls legendType="none" />
-          <Line type="monotone" dataKey="reference" stroke="#15803D" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="Referenční křivka" connectNulls />
-          <Line type="monotone" dataKey="actual" stroke="#111110" strokeWidth={2.5} dot={{ r: 4, fill: '#111110' }} name="Bob (reálná váha)" connectNulls />
+          <Line type="monotone" dataKey="reference" stroke={CHART_COLORS.reference} strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="Referenční křivka" connectNulls />
+          <Line type="monotone" dataKey="actual" stroke={CHART_COLORS.actual} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.actual }} name="Bob (reálná váha)" connectNulls />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
