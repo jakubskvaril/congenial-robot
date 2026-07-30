@@ -11,6 +11,7 @@ import { WeightChart } from '../components/WeightChart';
 import { NutrientAverages } from '../components/NutrientAverages';
 import { RemindersSettings } from '../components/RemindersSettings';
 import { PetSharing } from '../components/PetSharing';
+import { DataBackup } from '../components/DataBackup';
 import type { HealthRecord } from '../types';
 
 type Section = 'stats' | 'weight' | 'health' | 'reminders' | 'sharing';
@@ -267,7 +268,12 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
       )}
 
       {activeSection === 'reminders' && <RemindersSettings />}
-      {activeSection === 'sharing' && <PetSharing />}
+      {activeSection === 'sharing' && (
+        <>
+          <PetSharing />
+          <DataBackup />
+        </>
+      )}
     </div>
   );
 }
