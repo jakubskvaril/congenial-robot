@@ -22,7 +22,7 @@ export function KcalRing({ value, max, size = 120 }: KcalRingProps) {
   return (
     <div className="kcal-ring" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r={r} fill="none" stroke={PALETTE.border} strokeWidth="7" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke={PALETTE.n300} strokeWidth="7" />
         <circle
           cx="50" cy="50" r={r} fill="none"
           stroke={color} strokeWidth="7"

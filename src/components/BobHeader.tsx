@@ -28,14 +28,16 @@ export function BobHeader({ energy, latestWeight, onAddWeight, syncStatus }: Bob
         <line x1="34" y1="21" x2="23" y2="20" stroke="#d0c8b8" strokeWidth="0.5" />
       </svg>
       <div className="bob-title">
-        <h1>Bobův deníček</h1>
+        <h1>Bob</h1>
         <div className="bob-subtitle">
           {energy.lifeStageLabel} · {energy.ageMonths.toFixed(0)} měs. · {energy.kcal} kcal/den
           {latestWeight ? ` · ${latestWeight} kg` : ''}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-        <button className="bob-weight-btn" onClick={onAddWeight}>⚖️ Váha</button>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+        <button className="bob-weight-btn" onClick={onAddWeight}>
+          ⚖ {latestWeight ? `${latestWeight} kg` : 'Váha'}
+        </button>
         {syncStatus}
       </div>
     </header>

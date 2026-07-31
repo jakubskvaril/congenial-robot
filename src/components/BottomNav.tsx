@@ -6,10 +6,10 @@ interface BottomNavProps {
 }
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
-  { id: 'diary',     icon: '📋', label: 'Deník' },
-  { id: 'pouches',   icon: '🥫', label: 'Kapsičky' },
-  { id: 'analytics', icon: '📊', label: 'Analýza' },
-  { id: 'profile',   icon: '🐱', label: 'Profil' },
+  { id: 'diary',     icon: '▤', label: 'Deník' },
+  { id: 'pouches',   icon: '▣', label: 'Kapsičky' },
+  { id: 'analytics', icon: '◧', label: 'Analýza' },
+  { id: 'profile',   icon: '◉', label: 'Profil' },
 ];
 
 export function BottomNav({ active, onChange }: BottomNavProps) {

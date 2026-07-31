@@ -346,8 +346,8 @@ export function AddFoodModal({ onClose }: AddFoodModalProps) {
                 </div>
 
                 {/* Ca a P jsou kritické pro Felini výpočet */}
-                <div style={{ background: '#fff8e1', border: '1px solid #f0d060', borderRadius: 8, padding: '8px 12px' }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#8a6010', marginBottom: 6 }}>
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--divider)', padding: '8px 12px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>
                     ⚠️ Ca a P — klíčové pro výpočet Felini dávky
                   </div>
                   <div className="form-row">

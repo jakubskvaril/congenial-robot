@@ -68,18 +68,14 @@ export function NutrientBars({ nutrients, targets, ceilings, weeklyAvg, entries 
                       } : undefined}
                     >
                       <div className="nutrient-bar-label">
-                        <span style={{ fontWeight: 500 }}>
-                          {meta.label}
-                          {canOpen && <span className="nut-chevron" aria-hidden="true">{isOpen ? '⌃' : '⌄'}</span>}
+                        <span style={{ flex: 1, minWidth: 0, fontWeight: 800 }}>{meta.label}</span>
+                        <span style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
+                          {value} / {Math.round(targets[key])} {meta.unit}
                         </span>
-                        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
-                          <span style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
-                            {value} / {Math.round(targets[key])} {meta.unit}
-                          </span>
-                          <span style={{ color: st.color, fontWeight: 600, minWidth: 62, textAlign: 'right' }}>
-                            {st.primary}
-                          </span>
+                        <span style={{ minWidth: 74, textAlign: 'right', fontWeight: 800, color: st.color }}>
+                          {st.primary}
                         </span>
+                        {canOpen && <span className="nut-chevron" aria-hidden="true">{isOpen ? '⌃' : '›'}</span>}
                       </div>
                       <div className="nutrient-bar-track">
                         <div className="nutrient-bar-fill"

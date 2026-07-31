@@ -97,19 +97,22 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
       </div>
 
       {/* Section tabs */}
-      <div style={{ display: 'flex', gap: 0, background: 'var(--surface)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', borderBottom: 'var(--rule)' }}>
         {(['stats', 'weight', 'health', 'reminders', 'sharing'] as const).map(s => (
           <button key={s} type="button"
             onClick={() => setActiveSection(s)}
             style={{
-              flex: 1, padding: '10px 2px', border: 'none',
-              background: activeSection === s ? 'var(--primary)' : 'transparent',
-              color: activeSection === s ? 'white' : 'var(--muted)',
-              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.7rem',
+              flex: 1, minHeight: 44, padding: '11px 4px', border: 0,
+              borderLeft: '1px solid color-mix(in srgb, var(--text) 15%, transparent)',
+              borderTop: activeSection === s ? '3px solid var(--accent)' : '3px solid transparent',
+              background: activeSection === s ? 'var(--surface)' : 'transparent',
+              color: activeSection === s ? 'var(--text)' : 'var(--subtle)',
+              fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11,
+              letterSpacing: '0.04em', textTransform: 'uppercase',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}
           >
-            {s === 'stats' ? '📊 Přehled' : s === 'weight' ? '⚖️ Váha' : s === 'health' ? '🏥 Zdraví' : s === 'reminders' ? '🔔 Alarm' : '☁️ Sync'}
+            {s === 'stats' ? 'Přehled' : s === 'weight' ? 'Váha' : s === 'health' ? 'Zdraví' : s === 'reminders' ? 'Alarm' : 'Sync'}
           </button>
         ))}
       </div>
@@ -157,8 +160,8 @@ export function ProfileView({ onAddWeight }: ProfileViewProps) {
 
             {/* Bez váhy nejsou cíle spolehlivé */}
             {!hasWeight && (
-              <div className="card" style={{ borderColor: '#F0D060', background: '#FFFBEB' }}>
-                <p className="help-text" style={{ color: '#8a6010' }}>
+              <div className="card" style={{ background: 'var(--accent100, #fff2ef)' }}>
+                <p className="help-text" style={{ color: 'var(--accent700, #ae1800)' }}>
                   ⚖️ Zadej Bobovu váhu, ať se průměry porovnají se správnými cíli.
                   Zatím ukazujeme jen holé hodnoty.
                 </p>
