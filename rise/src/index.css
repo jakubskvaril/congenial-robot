@@ -1,0 +1,341 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --pergamen: #f2e7ce;
+    --pergamen-stin: #dfcba4;
+    --inkoust: #23180f;
+    --kamen: #b9ae99;
+    --kamen-stin: #7c7361;
+    --strecha: #b14a32;
+    --strecha-stin: #8a3320;
+    --louka: #7c9a4a;
+    --les: #3f5a2f;
+    --voda: #79a7b5;
+    --zlato: #c79a2b;
+    --rumelka: #d2542c;
+
+    /* Odvozené — scéna se přebarvuje podle nálady, ne podle náhody. */
+    --saturace: 1;
+    --obloha-1: #cfe0e6;
+    --obloha-2: #eae0c6;
+    --inkoust-slaby: rgba(35, 24, 15, 0.55);
+    --inkoust-vlas: rgba(35, 24, 15, 0.18);
+    --linka: 1.8px;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--pergamen);
+    color: var(--inkoust);
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  /* Všechna čísla v aplikaci bez výjimky — nikdy se nekroutí, sloupce sedí. */
+  .cislo,
+  input[type='number'],
+  input[type='date'],
+  table td.cislo,
+  table th.cislo {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--rumelka);
+    outline-offset: 2px;
+    border-radius: 1px;
+  }
+
+  ::selection {
+    background: var(--zlato);
+    color: var(--pergamen);
+  }
+}
+
+@layer components {
+  /* Účetní kniha: vodorovné linky, žádné boxy, žádné stíny. */
+  .ucetni {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .ucetni th {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0 10px 6px;
+    border-bottom: var(--linka) solid var(--inkoust);
+    white-space: nowrap;
+  }
+
+  .ucetni td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--inkoust-vlas);
+    vertical-align: baseline;
+  }
+
+  .ucetni tr:last-child td {
+    border-bottom: none;
+  }
+
+  .ucetni .soucet td {
+    border-top: var(--linka) solid var(--inkoust);
+    border-bottom: none;
+    padding-top: 9px;
+    font-weight: 600;
+  }
+
+  .ucetni .cislo {
+    text-align: right;
+  }
+
+  .zisk {
+    color: var(--les);
+  }
+
+  .ztrata {
+    color: var(--rumelka);
+  }
+
+  /* Tlačítko: obtažené inkoustem, bez zaoblení a bez stínu. */
+  .tlacitko {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    min-height: 40px;
+    border: var(--linka) solid var(--inkoust);
+    background: transparent;
+    color: var(--inkoust);
+    cursor: pointer;
+    transition: background 160ms ease-out, color 160ms ease-out;
+  }
+
+  .tlacitko:hover:not(:disabled) {
+    background: var(--inkoust);
+    color: var(--pergamen);
+  }
+
+  .tlacitko:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .tlacitko-hlavni {
+    background: var(--inkoust);
+    color: var(--pergamen);
+  }
+
+  .tlacitko-hlavni:hover:not(:disabled) {
+    background: var(--rumelka);
+    border-color: var(--rumelka);
+    color: var(--pergamen);
+  }
+
+  .tlacitko-varovne:hover:not(:disabled) {
+    background: var(--rumelka);
+    border-color: var(--rumelka);
+    color: var(--pergamen);
+  }
+
+  /* Pole formuláře — linka zdola, jako v podacím archu. */
+  .pole {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    width: 100%;
+    padding: 7px 2px;
+    min-height: 40px;
+    background: transparent;
+    border: none;
+    border-bottom: var(--linka) solid var(--inkoust);
+    color: var(--inkoust);
+    border-radius: 0;
+  }
+
+  .pole:disabled {
+    opacity: 0.5;
+  }
+
+  .popisek {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .nadpis-sekce {
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding-bottom: 6px;
+    border-bottom: var(--linka) solid var(--inkoust);
+  }
+
+  /* Štítek stáří ceny / stavu zákona. */
+  .stitek {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+
+  .stitek-zluty {
+    color: #8a6a12;
+  }
+
+  .stitek-cerveny {
+    color: var(--rumelka);
+  }
+}
+
+/* Ambientní smyčky — jen transform a opacity. */
+@keyframes vlaje {
+  0%,
+  100% {
+    transform: scaleX(1) skewY(0deg);
+  }
+  50% {
+    transform: scaleX(0.88) skewY(-3deg);
+  }
+}
+
+@keyframes kour {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-46px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes tresk {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(5px);
+  }
+}
+
+@keyframes pochoden {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scaleY(1);
+  }
+  40% {
+    opacity: 1;
+    transform: scaleY(1.14);
+  }
+  70% {
+    opacity: 0.7;
+    transform: scaleY(0.92);
+  }
+}
+
+@keyframes prelet {
+  from {
+    transform: translate(-140px, 0);
+    opacity: 0;
+  }
+  8%,
+  92% {
+    opacity: 0.75;
+  }
+  to {
+    transform: translate(1740px, -60px);
+    opacity: 0;
+  }
+}
+
+@keyframes mrak {
+  from {
+    transform: translateX(-260px);
+  }
+  to {
+    transform: translateX(1700px);
+  }
+}
+
+.a-vlaje {
+  animation: vlaje 3s ease-in-out infinite;
+  transform-origin: left center;
+}
+
+.a-kour {
+  animation: kour 6s ease-out infinite;
+}
+
+.a-voda {
+  animation: tresk 4s ease-in-out infinite;
+}
+
+.a-pochoden {
+  animation: pochoden 1.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.a-ptak {
+  animation: prelet 25s linear infinite;
+}
+
+.a-mrak {
+  animation: mrak 90s linear infinite;
+}
+
+/* Tohle není volitelné. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .a-vlaje,
+  .a-kour,
+  .a-voda,
+  .a-pochoden,
+  .a-ptak,
+  .a-mrak {
+    animation: none !important;
+  }
+}
