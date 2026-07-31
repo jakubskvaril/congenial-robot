@@ -233,8 +233,16 @@ export function zapamatujUrovne(urovne: Record<SferaId, number>): void {
   nastavStav((s) => ({ ...s, videnUrovne: urovne }));
 }
 
-export function zaznamenejLevelUp(sferaId: SferaId, nazevUrovne: string, sfera: string): void {
-  nastavStav((s) => zapisDoKroniky(s, 'levelup', `${sfera} povýšeny na ${nazevUrovne}.`, sferaId));
+const LEVELUP_VETY: Record<SferaId, string> = {
+  castle: 'Hrad povýšen',
+  wall: 'Hradby povýšeny',
+  horde: 'Horda povýšena',
+};
+
+export function zaznamenejLevelUp(sferaId: SferaId, nazevUrovne: string): void {
+  nastavStav((s) =>
+    zapisDoKroniky(s, 'levelup', `${LEVELUP_VETY[sferaId]} — ${nazevUrovne}.`, sferaId),
+  );
 }
 
 /* ------------------------------------------------------- export/import -- */

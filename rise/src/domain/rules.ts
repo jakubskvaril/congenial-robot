@@ -1,5 +1,5 @@
 import { dniMezi, dnesIso } from './datum';
-import { formatDatum, formatKc, formatProcenta } from './money';
+import { formatDatum, formatDny, formatKc, formatProcenta, sklonuj } from './money';
 import type { Aktivum, Prahy } from './types';
 import type { OceneniPortfolia } from './valuation';
 
@@ -56,7 +56,10 @@ function zakonHradby(portfolio: OceneniPortfolia, prahy: Prahy): Zakon {
     id: 'hradby-plan',
     nazev: `Hradby se plní po ${formatKc(prahy.hradbyMesicniTranse)} měsíčně po dobu ${prahy.hradbyPocetTransi} měsíců`,
     stav: zbyva === 0 ? 'ok' : 'neurceno',
-    hodnota: zbyva === 0 ? 'naplněno' : `zbývá ${zbyva} tranší`,
+    hodnota:
+      zbyva === 0
+        ? 'naplněno'
+        : `${sklonuj(zbyva, 'zbývá', 'zbývají', 'zbývá')} ${zbyva} ${sklonuj(zbyva, 'tranše', 'tranše', 'tranší')}`,
     detail: `Vloženo ${formatKc(vlozeno)} z ${formatKc(cil)}.`,
     postup: cil > 0 ? Math.min(1, vlozeno / cil) : null,
   };
@@ -160,8 +163,8 @@ function zakonCasovyTest(aktiva: readonly Aktivum[], dnes: string): Zakon {
     hodnota: dni > 0 ? formatDatum(nejblizsi.datum) : 'vše uzrálo',
     detail:
       dni > 0
-        ? `Nejbližší uzrání za ${dni} dní (${nejblizsi.nazev}). Uzrálo ${uzralo} z ${uzrani.length} tranší.`
-        : `Uzrálo všech ${uzrani.length} tranší.`,
+        ? `Nejbližší uzrání za ${formatDny(dni)} (${nejblizsi.nazev}). Uzrálo ${uzralo} z ${uzrani.length} ${sklonuj(uzrani.length, 'tranše', 'tranší', 'tranší')}.`
+        : `Uzrálo všech ${uzrani.length} ${sklonuj(uzrani.length, 'tranše', 'tranše', 'tranší')}.`,
     postup: null,
   };
 }

@@ -5,10 +5,12 @@ import {
   formatCenu,
   formatCislo,
   formatDatum,
+  formatDny,
   formatJednotky,
   formatKcSeZnamenkem,
   formatProcenta,
   formatProcentaSeZnamenkem,
+  sklonuj,
 } from '../domain/money';
 import { NAZVY_SFER, type OceneniAktiva, type OceneniPortfolia } from '../domain/valuation';
 import { Prazdno, Rolovatelne } from './Sekce';
@@ -17,7 +19,7 @@ export function DrzenePozice({ portfolio }: { portfolio: OceneniPortfolia }) {
   const vsechna = portfolio.poradi.flatMap((s) => portfolio.sfery[s].aktiva);
 
   return (
-    <Rolovatelne>
+    <Rolovatelne minSirka={1460}>
       <table className="ucetni">
         <thead>
           <tr>
@@ -107,7 +109,9 @@ function CasovyTest({ o }: { o: OceneniAktiva }) {
   const nejblizsi = zrajici.reduce((a, b) => ((a.dniDoUzrani ?? 0) <= (b.dniDoUzrani ?? 0) ? a : b));
   return (
     <span>
-      zraje, nejbližší za <span className="cislo">{nejblizsi.dniDoUzrani}</span> dní
+      zraje, nejbližší za{' '}
+      <span className="cislo">{nejblizsi.dniDoUzrani}</span>{' '}
+      {sklonuj(nejblizsi.dniDoUzrani ?? 0, 'den', 'dny', 'dní')}
     </span>
   );
 }
@@ -135,7 +139,7 @@ export function HistorieVkladu({ portfolio }: { portfolio: OceneniPortfolia }) {
   if (radky.length === 0) return <Prazdno>Zatím žádný zápis. Účty jsou prázdné.</Prazdno>;
 
   return (
-    <Rolovatelne>
+    <Rolovatelne minSirka={1080}>
       <table className="ucetni">
         <thead>
           <tr>
@@ -232,7 +236,7 @@ function RadekVkladu({
           <>
             <span className="cislo">{formatDatum(t.uzraje)}</span>
             <span className="ml-2 opacity-60">
-              {t.dniDoUzrani === 0 ? 'uzrálo' : `zraje, ${t.dniDoUzrani} dní`}
+              {t.dniDoUzrani === 0 ? 'uzrálo' : `zraje, ${formatDny(t.dniDoUzrani ?? 0)}`}
             </span>
           </>
         ) : (

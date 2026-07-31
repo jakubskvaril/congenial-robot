@@ -120,12 +120,20 @@ describe('plán Hradeb', () => {
     expect(zakon([], 'hradby-plan').hodnota).toBe('zbývá 6 tranší');
   });
 
-  it('po dvou tranších zbývají čtyři', () => {
+  it('po dvou tranších zbývají čtyři — a skloňuje se česky', () => {
     const a = czkAktivum({
       sferaId: 'wall',
       vklady: [{ id: 'v', datum: '2026-07-31', castka: 53_400 }],
     });
-    expect(zakon([a], 'hradby-plan').hodnota).toBe('zbývá 4 tranší');
+    expect(zakon([a], 'hradby-plan').hodnota).toBe('zbývají 4 tranše');
+  });
+
+  it('jedna zbývající tranše je v jednotném čísle', () => {
+    const a = czkAktivum({
+      sferaId: 'wall',
+      vklady: [{ id: 'v', datum: '2026-07-31', castka: 133_500 }],
+    });
+    expect(zakon([a], 'hradby-plan').hodnota).toBe('zbývá 1 tranše');
   });
 
   it('po naplnění je hotovo', () => {

@@ -30,10 +30,16 @@ export function Sekce({
 }
 
 /** Vodorovně scrollovatelný obal — tabulka nikdy nerozjede stránku. */
-export function Rolovatelne({ children }: { children: ReactNode }) {
+export function Rolovatelne({
+  children,
+  minSirka = 720,
+}: {
+  children: ReactNode;
+  minSirka?: number;
+}) {
   return (
     <div className="-mx-4 overflow-x-auto px-4">
-      <div className="min-w-[720px]">{children}</div>
+      <div style={{ minWidth: `${minSirka}px` }}>{children}</div>
     </div>
   );
 }

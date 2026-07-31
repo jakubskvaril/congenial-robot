@@ -1,4 +1,4 @@
-import { dniMezi, dnesIso, nejblizsiPredchozi, posledni, pridejRoky } from './datum';
+import { dniMezi, dnesIso, nejblizsiPredchozi, posledni, pridejDny, pridejRoky } from './datum';
 import type { Aktivum, Cena, Kurzy, Mena, SferaId, Vklad } from './types';
 import { xirr, type Cashflow } from './xirr';
 
@@ -274,6 +274,41 @@ export function oceniPortfolio(
       dnes,
     ),
   };
+}
+
+/* -------------------------------------------------------------- sparkline -- */
+
+export interface BodHistorie {
+  datum: string;
+  hodnota: number;
+}
+
+/**
+ * Hodnota sféry den po dni zpětně. V režimu `sazba` vyjde hladká křivka,
+ * v režimu `jednotky` se propíše skutečný pohyb ceny. Vklady, které tehdy
+ * ještě neexistovaly, se nezapočítají — křivka tak nezačíná falešně vysoko.
+ */
+export function historieHodnoty(
+  aktiva: readonly Aktivum[],
+  kurzy: Kurzy,
+  dnes: string,
+  dni = 90,
+  krok = 3,
+): BodHistorie[] {
+  const body: BodHistorie[] = [];
+  for (let d = dni; d >= 0; d -= krok) {
+    const datum = pridejDny(dnes, -d);
+    const hodnota = aktiva.reduce((s, a) => {
+      const jenMinule: Aktivum = {
+        ...a,
+        vklady: a.vklady.filter((v) => v.datum <= datum),
+        ceny: a.ceny.filter((c) => c.datum <= datum),
+      };
+      return s + oceniAktivum(jenMinule, kurzy, datum).hodnota;
+    }, 0);
+    body.push({ datum, hodnota });
+  }
+  return body;
 }
 
 /* -------------------------------------------------------------- projekce -- */

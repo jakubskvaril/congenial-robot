@@ -7,6 +7,8 @@ import {
   formatLetopis,
   formatProcenta,
   formatProcentaSeZnamenkem,
+  formatDny,
+  sklonuj,
 } from './money';
 
 const NBSP = ' ';
@@ -94,5 +96,21 @@ describe('nejblizsiPredchozi', () => {
   it('posledni vrací nejnovější bez ohledu na dnešek', () => {
     expect(posledni(rady)!.v).toBe(3);
     expect(posledni([])).toBeNull();
+  });
+});
+
+describe('skloňování', () => {
+  it('řídí tvar podstatného jména po číslovce', () => {
+    expect(sklonuj(1, 'tranše', 'tranše', 'tranší')).toBe('tranše');
+    expect(sklonuj(3, 'tranše', 'tranše', 'tranší')).toBe('tranše');
+    expect(sklonuj(6, 'tranše', 'tranše', 'tranší')).toBe('tranší');
+    expect(sklonuj(0, 'tranše', 'tranše', 'tranší')).toBe('tranší');
+  });
+
+  it('formatDny skloňuje dny', () => {
+    expect(formatDny(1)).toBe('1 den');
+    expect(formatDny(3)).toBe('3 dny');
+    expect(formatDny(519)).toBe('519 dní');
+    expect(formatDny(0)).toBe('0 dní');
   });
 });

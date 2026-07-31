@@ -82,6 +82,27 @@ export function formatDatum(iso: string | null | undefined): string {
   return `${Number(d)}. ${Number(m)}. ${r}`;
 }
 
+/**
+ * České skloňování po číslovce: 1 tranše, 2–4 tranše, 5+ tranší.
+ * Sloveso se řídí stejně — „zbývá 1 tranše" / „zbývají 3 tranše" / „zbývá 5 tranší".
+ */
+export function sklonuj(
+  pocet: number,
+  jedna: string,
+  dveAzCtyri: string,
+  petAVic: string,
+): string {
+  const n = Math.abs(Math.round(pocet));
+  if (n === 1) return jedna;
+  if (n >= 2 && n <= 4) return dveAzCtyri;
+  return petAVic;
+}
+
+/** „1 den" / „3 dny" / „519 dní" — číslo zůstává v monospace. */
+export function formatDny(pocet: number): string {
+  return `${Math.round(pocet)} ${sklonuj(pocet, 'den', 'dny', 'dní')}`;
+}
+
 const MESICE = [
   'ledna',
   'února',
