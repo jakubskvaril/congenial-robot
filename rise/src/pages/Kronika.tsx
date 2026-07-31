@@ -74,7 +74,7 @@ export default function Kronika() {
       <footer className="mt-16 border-t-[1.8px] border-[var(--inkoust)] pt-5 text-[14px] opacity-60">
         <p className="max-w-[70ch]">
           Říše ukazuje čísla a data z tvých vlastních zápisů. Nedává daňová ani investiční
-          doporučení a neradí, co koupit nebo prodat.
+          doporučení a nenavrhuje žádné obchodní kroky.
         </p>
       </footer>
     </div>
