@@ -66,9 +66,9 @@ export interface OceneniPortfolia {
 export const SFERY: SferaId[] = ['castle', 'wall', 'horde'];
 
 export const NAZVY_SFER: Record<SferaId, string> = {
-  castle: 'Hrad',
-  wall: 'Hradby',
-  horde: 'Horda',
+  castle: 'Castle',
+  wall: 'Walls',
+  horde: 'Horde',
 };
 
 const CENA_STARA_DNI = 7;

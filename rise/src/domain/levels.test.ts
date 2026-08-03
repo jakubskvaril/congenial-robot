@@ -18,20 +18,20 @@ describe('urovenSfery', () => {
   });
 
   it('jedna koruna zvedne na úroveň 1', () => {
-    expect(urovenSfery('wall', 1).def.nazev).toBe('Palisáda');
+    expect(urovenSfery('wall', 1).def.nazev).toBe('Palisade');
   });
 
   it('výchozí stav zadání: hrad na 80 000 Kč je Kamenná tvrz', () => {
     const u = urovenSfery('castle', 80_000);
     expect(u.lvl).toBe(2);
-    expect(u.def.nazev).toBe('Kamenná tvrz');
-    expect(u.dalsi!.nazev).toBe('Opevněný dvorec');
+    expect(u.def.nazev).toBe('Stone Keep');
+    expect(u.dalsi!.nazev).toBe('Fortified Manor');
     expect(u.chybi).toBe(70_000);
   });
 
   it('práh je inkluzivní', () => {
-    expect(urovenSfery('wall', 40_000).def.nazev).toBe('Nízká zeď');
-    expect(urovenSfery('wall', 39_999).def.nazev).toBe('Palisáda');
+    expect(urovenSfery('wall', 40_000).def.nazev).toBe('Low Wall');
+    expect(urovenSfery('wall', 39_999).def.nazev).toBe('Palisade');
   });
 
   it('postup uvnitř úrovně je lineární', () => {
@@ -132,7 +132,7 @@ describe('zjistiLevelUpy', () => {
     const up = zjistiLevelUpy({ castle: 0, wall: 0, horde: 0 }, { castle: 5, wall: 0, horde: 0 });
     expect(up).toHaveLength(1);
     expect(up[0]!.naUroven).toBe(5);
-    expect(up[0]!.def.nazev).toBe('Katedrála');
+    expect(up[0]!.def.nazev).toBe('Cathedral');
   });
 
   it('beze změny nic nehlásí', () => {

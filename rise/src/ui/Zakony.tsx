@@ -3,10 +3,10 @@ import { nastavPrahy, useStav } from '../data/store';
 import type { Zakon } from '../domain/rules';
 
 const ZNAKY: Record<Zakon['stav'], { znak: string; trida: string; popis: string }> = {
-  ok: { znak: '✔', trida: 'zisk', popis: 'v pořádku' },
-  varovani: { znak: '⚠', trida: 'text-[#8a6a12]', popis: 'blíží se mez' },
-  poruseno: { znak: '✖', trida: 'ztrata', popis: 'překročeno' },
-  neurceno: { znak: '·', trida: 'opacity-45', popis: 'sleduje se' },
+  ok: { znak: '✔', trida: 'zisk', popis: 'in good order' },
+  varovani: { znak: '⚠', trida: 'text-[#8a6a12]', popis: 'approaching the limit' },
+  poruseno: { znak: '✖', trida: 'ztrata', popis: 'breached' },
+  neurceno: { znak: '·', trida: 'opacity-45', popis: 'being watched' },
 };
 
 export function ZakonyRise({ zakony }: { zakony: readonly Zakon[] }) {
@@ -36,7 +36,7 @@ export function ZakonyRise({ zakony }: { zakony: readonly Zakon[] }) {
                     <div
                       className="mt-2 h-[6px] w-full max-w-[420px] border border-[var(--inkoust)]"
                       role="img"
-                      aria-label={`Naplněno na ${Math.round(z.postup * 100)} %`}
+                      aria-label={`${Math.round(z.postup * 100)}% filled`}
                     >
                       <div
                         className="h-full"
@@ -60,7 +60,7 @@ export function ZakonyRise({ zakony }: { zakony: readonly Zakon[] }) {
         onClick={() => setNastaveni((v) => !v)}
         aria-expanded={nastaveni}
       >
-        {nastaveni ? 'Skrýt prahy' : 'Upravit prahy'}
+        {nastaveni ? 'Hide thresholds' : 'Edit thresholds'}
       </button>
 
       {nastaveni && <PrahyFormular />}
@@ -74,31 +74,31 @@ function PrahyFormular() {
   return (
     <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-5 border-t-[1.8px] border-[var(--inkoust)] pt-5 sm:grid-cols-2 lg:grid-cols-3">
       <Prah
-        popisek="Strop vkladů do Hordy (Kč)"
+        popisek="Cap on Horde contributions (CZK)"
         hodnota={prahy.hordaStropVkladu}
         krok={1000}
         onZmena={(v) => nastavPrahy({ hordaStropVkladu: v })}
       />
       <Prah
-        popisek="Max. IT expozice (%)"
+        popisek="Max IT exposure (%)"
         hodnota={prahy.itExpoziceMax * 100}
         krok={1}
         onZmena={(v) => nastavPrahy({ itExpoziceMax: v / 100 })}
       />
       <Prah
-        popisek="Odhad IT podílu v Hradbách (%)"
+        popisek="Estimated IT share of the Walls (%)"
         hodnota={prahy.itPodilVeWall * 100}
         krok={1}
         onZmena={(v) => nastavPrahy({ itPodilVeWall: v / 100 })}
       />
       <Prah
-        popisek="Měsíční tranše do Hradeb (Kč)"
+        popisek="Monthly tranche into the Walls (CZK)"
         hodnota={prahy.hradbyMesicniTranse}
         krok={100}
         onZmena={(v) => nastavPrahy({ hradbyMesicniTranse: v })}
       />
       <Prah
-        popisek="Počet tranší"
+        popisek="Number of tranches"
         hodnota={prahy.hradbyPocetTransi}
         krok={1}
         onZmena={(v) => nastavPrahy({ hradbyPocetTransi: v })}

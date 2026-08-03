@@ -21,14 +21,11 @@ function czkAktivum(over: Partial<Aktivum>): Aktivum {
   };
 }
 
-/** Intl sází úzkou nedělitelnou mezeru — pro porovnání ji srovnáme na obyčejnou. */
-const mezery = (s: string) => s.replace(/[   ]/g, ' ');
-
 function zakon(aktiva: Aktivum[], id: string, dnes = '2026-07-31') {
   const { portfolio } = portfolioZ(aktiva, dnes);
   const z = vyhodnotZakony(portfolio, aktiva, VYCHOZI_PRAHY, dnes).find((x) => x.id === id);
   if (!z) throw new Error(`zákon ${id} chybí`);
-  return { ...z, hodnota: mezery(z.hodnota), detail: mezery(z.detail), nazev: mezery(z.nazev) };
+  return z;
 }
 
 describe('vyhodnotZakony', () => {
@@ -65,7 +62,7 @@ describe('strop Hordy', () => {
     });
     const z = zakon([a], 'horda-strop');
     expect(z.stav).toBe('poruseno');
-    expect(z.detail).toContain('1 000 Kč');
+    expect(z.detail).toContain('1,000 CZK');
   });
 
   it('počítá se z vkladů, ne z hodnoty', () => {
@@ -77,7 +74,7 @@ describe('strop Hordy', () => {
     });
     const z = zakon([a], 'horda-strop', '2027-07-31');
     expect(z.stav).toBe('ok');
-    expect(z.hodnota).toContain('40 000 Kč');
+    expect(z.hodnota).toContain('40,000 CZK');
   });
 });
 
@@ -93,7 +90,7 @@ describe('IT expozice', () => {
     });
     const z = zakon([a], 'it-expozice');
     expect(z.stav).toBe('ok');
-    expect(z.hodnota).toBe('25,0 %');
+    expect(z.hodnota).toBe('25.0%');
   });
 
   it('velká Horda zákon poruší a odcituje ho', () => {
@@ -109,23 +106,23 @@ describe('IT expozice', () => {
     });
     const z = zakon([wall, horde], 'it-expozice');
     // (50 000 × 0,25 + 50 000) / 100 000 = 62,5 %
-    expect(z.hodnota).toBe('62,5 %');
+    expect(z.hodnota).toBe('62.5%');
     expect(z.stav).toBe('poruseno');
-    expect(z.detail).toContain('Zákon říká');
+    expect(z.detail).toContain('The law says');
   });
 });
 
 describe('plán Hradeb', () => {
   it('prázdné Hradby mají zbývat všech šest tranší', () => {
-    expect(zakon([], 'hradby-plan').hodnota).toBe('zbývá 6 tranší');
+    expect(zakon([], 'hradby-plan').hodnota).toBe('6 tranches left');
   });
 
-  it('po dvou tranších zbývají čtyři — a skloňuje se česky', () => {
+  it('po dvou tranších zbývají čtyři', () => {
     const a = czkAktivum({
       sferaId: 'wall',
       vklady: [{ id: 'v', datum: '2026-07-31', castka: 53_400 }],
     });
-    expect(zakon([a], 'hradby-plan').hodnota).toBe('zbývají 4 tranše');
+    expect(zakon([a], 'hradby-plan').hodnota).toBe('4 tranches left');
   });
 
   it('jedna zbývající tranše je v jednotném čísle', () => {
@@ -133,7 +130,7 @@ describe('plán Hradeb', () => {
       sferaId: 'wall',
       vklady: [{ id: 'v', datum: '2026-07-31', castka: 133_500 }],
     });
-    expect(zakon([a], 'hradby-plan').hodnota).toBe('zbývá 1 tranše');
+    expect(zakon([a], 'hradby-plan').hodnota).toBe('1 tranche left');
   });
 
   it('po naplnění je hotovo', () => {
@@ -143,7 +140,7 @@ describe('plán Hradeb', () => {
     });
     const z = zakon([a], 'hradby-plan');
     expect(z.stav).toBe('ok');
-    expect(z.hodnota).toBe('naplněno');
+    expect(z.hodnota).toBe('complete');
   });
 });
 
@@ -182,8 +179,8 @@ describe('tříletý časový test', () => {
       ],
     });
     const z = zakon([a], 'casovy-test');
-    expect(z.hodnota).toBe('31. 7. 2029');
-    expect(z.detail).toContain('1096 dní');
+    expect(z.hodnota).toBe('31 Jul 2029');
+    expect(z.detail).toContain('1096 days');
   });
 
   it('penzijní režim se do testu nepočítá', () => {
@@ -196,6 +193,6 @@ describe('tříletý časový test', () => {
 
   it('po třech letech je vše uzrálé', () => {
     const a = czkAktivum({ vklady: [{ id: 'v1', datum: '2026-07-31', castka: 1_000 }] });
-    expect(zakon([a], 'casovy-test', '2030-01-01').hodnota).toBe('vše uzrálo');
+    expect(zakon([a], 'casovy-test', '2030-01-01').hodnota).toBe('all matured');
   });
 });

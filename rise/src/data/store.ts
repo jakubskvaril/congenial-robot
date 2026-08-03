@@ -140,7 +140,7 @@ export function pridejVklad(aktivumId: string, vklad: Omit<Vklad, 'id'>): void {
     return zapisDoKroniky(
       { ...s, aktiva },
       'vklad',
-      `${textVkladu(aktivum.sferaId)} ${formatCastku(vklad.castka)}.`,
+      `${formatCastku(vklad.castka)} ${textVkladu(aktivum.sferaId)}.`,
       aktivum.sferaId,
       vklad.datum,
     );
@@ -150,16 +150,16 @@ export function pridejVklad(aktivumId: string, vklad: Omit<Vklad, 'id'>): void {
 function textVkladu(sferaId: SferaId): string {
   switch (sferaId) {
     case 'castle':
-      return 'Do pokladny hradu uloženo';
+      return 'laid in the castle treasury';
     case 'wall':
-      return 'Na stavbu hradeb vydáno';
+      return 'spent on the building of the walls';
     case 'horde':
-      return 'Hordě na výpravu předáno';
+      return 'handed to the Horde for the campaign';
   }
 }
 
 function formatCastku(castka: number): string {
-  return `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 }).format(castka)} Kč`;
+  return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(castka)} CZK`;
 }
 
 export function upravVklad(aktivumId: string, vkladId: string, zmena: Partial<Vklad>): void {
@@ -187,7 +187,7 @@ export function smazVklad(aktivumId: string, vkladId: string): void {
     return zapisDoKroniky(
       { ...s, aktiva },
       'vklad',
-      `Zápis o vkladu ${formatCastku(vklad.castka)} vymazán z účtů.`,
+      `The entry for ${formatCastku(vklad.castka)} was struck from the books.`,
       aktivum.sferaId,
     );
   });
@@ -234,9 +234,9 @@ export function zapamatujUrovne(urovne: Record<SferaId, number>): void {
 }
 
 const LEVELUP_VETY: Record<SferaId, string> = {
-  castle: 'Hrad povýšen',
-  wall: 'Hradby povýšeny',
-  horde: 'Horda povýšena',
+  castle: 'The Castle rises',
+  wall: 'The Walls rise',
+  horde: 'The Horde grows',
 };
 
 export function zaznamenejLevelUp(sferaId: SferaId, nazevUrovne: string): void {
@@ -254,13 +254,13 @@ export function exportJson(s: Stav = stav): string {
 export function importJson(text: string): { ok: true } | { ok: false; chyba: string } {
   try {
     const vstup: unknown = JSON.parse(text);
-    if (!vstup || typeof vstup !== 'object') return { ok: false, chyba: 'Soubor není platný JSON objekt.' };
+    if (!vstup || typeof vstup !== 'object') return { ok: false, chyba: 'The file is not a valid JSON object.' };
     if (!Array.isArray((vstup as NeznamyStav).aktiva))
-      return { ok: false, chyba: 'V souboru chybí pole `aktiva`.' };
+      return { ok: false, chyba: 'The file has no `aktiva` array.' };
     uloz(migruj(vstup));
     return { ok: true };
   } catch (e) {
-    return { ok: false, chyba: e instanceof Error ? e.message : 'Soubor se nepodařilo přečíst.' };
+    return { ok: false, chyba: e instanceof Error ? e.message : 'The file could not be read.' };
   }
 }
 

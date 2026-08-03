@@ -47,7 +47,7 @@ export function Cartouche({
   return (
     <div
       role={bottomSheet ? 'dialog' : undefined}
-      aria-label={`Podrobnosti sféry ${NAZVY_SFER[sferaId]}`}
+      aria-label={`${NAZVY_SFER[sferaId]} details`}
       className={
         bottomSheet
           ? 'fixed inset-x-0 bottom-0 z-40 max-h-[75vh] overflow-y-auto border-t-2 border-[var(--inkoust)] bg-[var(--pergamen)] px-5 pb-8 pt-4'
@@ -75,7 +75,7 @@ export function Cartouche({
             className="tlacitko float-right !min-h-0 !px-2 !py-1"
             onClick={onZavrit}
           >
-            Zavřít
+            Close
           </button>
         )}
 
@@ -83,7 +83,7 @@ export function Cartouche({
         <p className="text-[13px] opacity-65">{nastroje}</p>
 
         <p className="cislo mt-3 text-[30px] leading-none">
-          {prazdna ? '0 Kč' : formatKc(s.hodnota)}
+          {prazdna ? '0 CZK' : formatKc(s.hodnota)}
         </p>
 
         {prazdna ? (
@@ -91,13 +91,13 @@ export function Cartouche({
         ) : (
           <>
             <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[14px]">
-              <dt className="opacity-65">Vloženo</dt>
+              <dt className="opacity-65">Paid in</dt>
               <dd className="cislo text-right">{formatKc(s.vlozeno)}</dd>
-              <dt className="opacity-65">Zisk</dt>
+              <dt className="opacity-65">Gain</dt>
               <dd className={`cislo text-right ${barva(s.zisk)}`}>
                 {formatKcSeZnamenkem(s.zisk)} ({formatProcentaSeZnamenkem(s.ziskPct)})
               </dd>
-              <dt className="opacity-65">Výnos p.a.</dt>
+              <dt className="opacity-65">Return p.a.</dt>
               <dd className="cislo text-right">{formatProcentaSeZnamenkem(s.vynosPa)}</dd>
             </dl>
 
@@ -108,14 +108,14 @@ export function Cartouche({
         <div className="mt-4 border-t border-[var(--inkoust-vlas)] pt-3">
           <p className="flex items-baseline justify-between text-[13px]">
             <span className="font-display tracking-[0.08em]">{uroven.def.nazev}</span>
-            <span className="cislo opacity-65">úroveň {uroven.lvl}/7</span>
+            <span className="cislo opacity-65">level {uroven.lvl}/7</span>
           </p>
           {uroven.dalsi && (
             <>
               <div
                 className="mt-2 h-[7px] w-full border border-[var(--inkoust)]"
                 role="img"
-                aria-label={`Postup do další úrovně: ${Math.round(uroven.postup * 100)} %`}
+                aria-label={`Progress to the next level: ${Math.round(uroven.postup * 100)}%`}
               >
                 <div
                   className="h-full bg-[var(--zlato)]"
@@ -123,8 +123,8 @@ export function Cartouche({
                 />
               </div>
               <p className="mt-1.5 text-[13px]">
-                Do úrovně <em>{uroven.dalsi.nazev}</em> chybí{' '}
-                <span className="cislo">{formatKc(uroven.chybi)}</span>
+                <span className="cislo">{formatKc(uroven.chybi)}</span> short of{' '}
+                <em>{uroven.dalsi.nazev}</em>
               </p>
             </>
           )}
@@ -134,13 +134,13 @@ export function Cartouche({
           <p className="mt-2 text-[12px] opacity-65">
             {posledniCena ? (
               <>
-                Cena k <span className="cislo">{formatDatum(posledniCena.datum)}</span>
+                Price as of <span className="cislo">{formatDatum(posledniCena.datum)}</span>
                 {cenaStara && (
-                  <span className="stitek stitek-zluty ml-2">starší než 7 dní</span>
+                  <span className="stitek stitek-zluty ml-2">over 7 days old</span>
                 )}
               </>
             ) : (
-              <span className="stitek stitek-cerveny">cena zatím nenačtena</span>
+              <span className="stitek stitek-cerveny">price not fetched yet</span>
             )}
           </p>
         )}
@@ -157,9 +157,9 @@ function barva(zisk: number): string {
 /** Prázdný stav je výzva k akci, ne omluva. */
 function PrazdnaVyzva({ sferaId }: { sferaId: SferaId }) {
   const text: Record<SferaId, { veta: string; akce: string }> = {
-    castle: { veta: 'Pokladna hradu je prázdná.', akce: 'Ulož první vklad' },
-    wall: { veta: 'Hradby zatím jen vyměřené.', akce: 'Postav první úsek' },
-    horde: { veta: 'Horda čeká na rozkaz.', akce: 'Vyprav první oddíl' },
+    castle: { veta: 'The castle treasury is empty.', akce: 'Lay in the first sum' },
+    wall: { veta: 'The Walls are only marked out.', akce: 'Build the first stretch' },
+    horde: { veta: 'The Horde awaits orders.', akce: 'Send out the first troop' },
   };
   return (
     <div className="mt-3">
@@ -194,7 +194,7 @@ function Sparkline({ body }: { body: number[] }) {
       viewBox={`0 0 ${w} ${h}`}
       className="mt-3 h-[40px] w-full"
       role="img"
-      aria-label="Vývoj hodnoty za posledních 90 dní"
+      aria-label="Value over the last 90 days"
     >
       <path d={d} fill="none" stroke="var(--inkoust)" strokeWidth={1.6} strokeLinejoin="round" />
       <circle

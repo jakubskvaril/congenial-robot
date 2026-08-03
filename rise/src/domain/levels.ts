@@ -9,34 +9,34 @@ export interface UrovenDef {
 
 export const UROVNE: Record<SferaId, UrovenDef[]> = {
   castle: [
-    { lvl: 0, prah: 0, nazev: 'Holá pláň', pribude: 'kopec, cesta, vyznačené základy kolíky' },
-    { lvl: 1, prah: 1, nazev: 'Dřevěná tvrz', pribude: 'palisáda, dřevěná věž, doškové střechy, kouř z komína' },
-    { lvl: 2, prah: 80_000, nazev: 'Kamenná tvrz', pribude: 'kamenný donjon, věž s červenou střechou, nádvoří, studna' },
-    { lvl: 3, prah: 150_000, nazev: 'Opevněný dvorec', pribude: 'dvě boční věže, hradní brána, hospodářská stavení' },
-    { lvl: 4, prah: 250_000, nazev: 'Vysoká věž', pribude: 'hlavní věž dvojnásobné výšky, zlatá špička, kaple' },
-    { lvl: 5, prah: 400_000, nazev: 'Katedrála', pribude: 'katedrála s růžicovým oknem, hodinová věž, dlažba' },
-    { lvl: 6, prah: 600_000, nazev: 'Zlatá kupole', pribude: 'zlacená kupole, praporce na všech věžích, zahrady' },
-    { lvl: 7, prah: 1_000_000, nazev: 'Královské sídlo', pribude: 'vnitřní prstenec, palác, most, v noci rozsvícená okna' },
+    { lvl: 0, prah: 0, nazev: 'Bare Plain', pribude: 'hill, road, foundations staked out' },
+    { lvl: 1, prah: 1, nazev: 'Timber Keep', pribude: 'palisade, wooden tower, thatched roofs, smoke from the chimney' },
+    { lvl: 2, prah: 80_000, nazev: 'Stone Keep', pribude: 'stone donjon, red-roofed tower, courtyard, well' },
+    { lvl: 3, prah: 150_000, nazev: 'Fortified Manor', pribude: 'two flanking towers, castle gate, farm buildings' },
+    { lvl: 4, prah: 250_000, nazev: 'High Tower', pribude: 'keep at double height, gilded spire, chapel' },
+    { lvl: 5, prah: 400_000, nazev: 'Cathedral', pribude: 'cathedral with a rose window, clock tower, paving' },
+    { lvl: 6, prah: 600_000, nazev: 'Gilded Dome', pribude: 'gilded dome, banners on every tower, gardens' },
+    { lvl: 7, prah: 1_000_000, nazev: 'Royal Seat', pribude: 'inner ring, palace, bridge, windows lit at night' },
   ],
   wall: [
-    { lvl: 0, prah: 0, nazev: 'Vyměřeno', pribude: 'kolíky a vyrytý příkop v trávě' },
-    { lvl: 1, prah: 1, nazev: 'Palisáda', pribude: 'dřevěný kůlový plot, jedna brána' },
-    { lvl: 2, prah: 40_000, nazev: 'Nízká zeď', pribude: 'kamenná zeď do poloviny výšky, dvě rohové bašty' },
-    { lvl: 3, prah: 80_000, nazev: 'Cimbuří', pribude: 'plná výška, cimbuří, ochoz, čtyři bašty' },
-    { lvl: 4, prah: 160_000, nazev: 'Brána s mříží', pribude: 'padací mříž, strážnice, praporce na baštách' },
-    { lvl: 5, prah: 250_000, nazev: 'První dělo', pribude: 'dělo na bráně, hlídka chodící po ochozu' },
-    { lvl: 6, prah: 400_000, nazev: 'Dělostřelectvo', pribude: 'tři děla, vodní příkop kolem hradeb' },
-    { lvl: 7, prah: 600_000, nazev: 'Druhý prstenec', pribude: 'vnější prstenec hradeb, barbakán' },
+    { lvl: 0, prah: 0, nazev: 'Marked Out', pribude: 'stakes and a scored ditch in the grass' },
+    { lvl: 1, prah: 1, nazev: 'Palisade', pribude: 'timber stake fence, a single gate' },
+    { lvl: 2, prah: 40_000, nazev: 'Low Wall', pribude: 'stone wall at half height, two corner bastions' },
+    { lvl: 3, prah: 80_000, nazev: 'Battlements', pribude: 'full height, crenellations, wall walk, four bastions' },
+    { lvl: 4, prah: 160_000, nazev: 'Portcullis Gate', pribude: 'portcullis, guardhouses, banners on the bastions' },
+    { lvl: 5, prah: 250_000, nazev: 'First Cannon', pribude: 'cannon over the gate, a sentry walking the wall' },
+    { lvl: 6, prah: 400_000, nazev: 'Artillery', pribude: 'three cannon, a water moat around the walls' },
+    { lvl: 7, prah: 600_000, nazev: 'Second Ring', pribude: 'outer ring of walls, barbican' },
   ],
   horde: [
-    { lvl: 0, prah: 0, nazev: 'Prázdné tábořiště', pribude: 'vyšlapaný kruh, vyhaslé ohniště' },
-    { lvl: 1, prah: 1, nazev: 'Průzkumníci', pribude: 'stan, dva pěšáci, oheň' },
-    { lvl: 2, prah: 20_000, nazev: 'Setnina', pribude: 'šest pěšáků, kopiníci, tři stany' },
-    { lvl: 3, prah: 45_000, nazev: 'Lučištníci', pribude: 'čtyři lučištníci, korouhev v čele' },
-    { lvl: 4, prah: 80_000, nazev: 'Jízda', pribude: 'tři jezdci, ohrada pro koně' },
-    { lvl: 5, prah: 150_000, nazev: 'Obléhací stroje', pribude: 'trebuchet, obléhací věž' },
-    { lvl: 6, prah: 250_000, nazev: 'Válečné bubny', pribude: 'druhý jízdní oddíl, bubeníci, formace do šiku' },
-    { lvl: 7, prah: 400_000, nazev: 'Vojsko', pribude: 'plná formace, standarty, pochodová animace' },
+    { lvl: 0, prah: 0, nazev: 'Empty Camp', pribude: 'a trodden circle, a cold fire pit' },
+    { lvl: 1, prah: 1, nazev: 'Scouts', pribude: 'one tent, two footmen, a fire' },
+    { lvl: 2, prah: 20_000, nazev: 'Company', pribude: 'six footmen, spearmen, three tents' },
+    { lvl: 3, prah: 45_000, nazev: 'Archers', pribude: 'four archers, a standard at the head' },
+    { lvl: 4, prah: 80_000, nazev: 'Cavalry', pribude: 'three riders, a horse pen' },
+    { lvl: 5, prah: 150_000, nazev: 'Siege Engines', pribude: 'trebuchet, siege tower' },
+    { lvl: 6, prah: 250_000, nazev: 'War Drums', pribude: 'a second mounted troop, drummers, ranks formed up' },
+    { lvl: 7, prah: 400_000, nazev: 'Army', pribude: 'full formation, standards, marching animation' },
   ],
 };
 
@@ -110,12 +110,12 @@ export function prosperita(ziskPct: number | null): Prosperita {
   const z = ziskPct ?? 0;
   const hodnota = clamp(z, -0.25, 0.35);
   if (z < -0.1)
-    return { hodnota, nalada: 'bourka', saturace: 0.7, popis: 'Bouřkové mraky nad říší' };
-  if (z < 0) return { hodnota, nalada: 'zatazeno', saturace: 0.85, popis: 'Zataženo' };
-  if (z < 0.1) return { hodnota, nalada: 'jasno', saturace: 1, popis: 'Jasno' };
+    return { hodnota, nalada: 'bourka', saturace: 0.7, popis: 'Storm clouds over the realm' };
+  if (z < 0) return { hodnota, nalada: 'zatazeno', saturace: 0.85, popis: 'Overcast' };
+  if (z < 0.1) return { hodnota, nalada: 'jasno', saturace: 1, popis: 'Clear skies' };
   if (z < 0.25)
-    return { hodnota, nalada: 'paprsky', saturace: 1.06, popis: 'Sluneční paprsky, na cestách povozy' };
-  return { hodnota, nalada: 'zlataHodina', saturace: 1.12, popis: 'Zlatá hodina' };
+    return { hodnota, nalada: 'paprsky', saturace: 1.06, popis: 'Sunbeams, carts on the roads' };
+  return { hodnota, nalada: 'zlataHodina', saturace: 1.12, popis: 'Golden hour' };
 }
 
 /** Jedna drobnost za každé procento zhodnocení, strop 30. Deterministické. */

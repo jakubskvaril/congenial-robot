@@ -27,13 +27,13 @@ function kostra(): Stav {
       {
         id: 'csob-penzijko',
         sferaId: 'castle',
-        nazev: 'ČSOB penzijní fond',
+        nazev: 'ČSOB pension fund',
         mena: 'CZK',
         ocenovani: 'sazba',
         planovanaSazbaPa: 0.035,
         rezimDane: 'penzijni',
         vklady: [
-          { id: 'v1', datum: '2026-07-31', castka: 80_000, poznamka: 'vstupní vklad' },
+          { id: 'v1', datum: '2026-07-31', castka: 80_000, poznamka: 'opening contribution' },
         ],
         ceny: [],
       },
@@ -78,7 +78,7 @@ function kostra(): Stav {
         datum: '2026-07-31',
         typ: 'vklad',
         sferaId: 'castle',
-        text: 'Do pokladny hradu uloženo 80 000 Kč.',
+        text: '80,000 CZK laid in the castle treasury.',
       },
     ],
   };

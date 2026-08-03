@@ -220,7 +220,7 @@ export function Kartus({ podtitul }: { podtitul: string }) {
           fontWeight={700}
           fill="var(--inkoust)"
         >
-          Ř
+          R
         </text>
         {/* úponky */}
         <path
@@ -235,12 +235,12 @@ export function Kartus({ podtitul }: { podtitul: string }) {
           x={112}
           y={72}
           fontFamily="Cinzel, serif"
-          fontSize={50}
+          fontSize={44}
           fontWeight={700}
-          letterSpacing="8"
+          letterSpacing="6"
           fill="var(--inkoust)"
         >
-          ÍŠE
+          EALM
         </text>
         <text
           x={114}

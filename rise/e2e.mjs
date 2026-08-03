@@ -32,9 +32,9 @@ async function novaStranka(ctx) {
   await page.waitForTimeout(1200);
 
   const popis = await page.getAttribute('svg[role="img"]', 'aria-label');
-  tvrd('1a: hrad startuje na Kamenné tvrzi (80 000 Kč)', popis.includes('Hrad: Kamenná tvrz'), popis.slice(0, 60));
-  tvrd('1b: hradby jsou Vyměřeno', popis.includes('Hradby: Vyměřeno'));
-  tvrd('1c: horda je Prázdné tábořiště', popis.includes('Horda: Prázdné tábořiště'));
+  tvrd('1a: hrad startuje na Kamenné tvrzi (80 000 Kč)', popis.includes('Castle: Stone Keep'), popis.slice(0, 60));
+  tvrd('1b: hradby jsou Vyměřeno', popis.includes('Walls: Marked Out'));
+  tvrd('1c: horda je Prázdné tábořiště', popis.includes('Horde: Empty Camp'));
 
   const radky = await page.$$eval('#souhrn tbody tr', (rs) => rs.map((r) => r.innerText));
   tvrd('1d: prázdné buňky jsou pomlčka, ne nula', radky[1].includes('—'), radky[1].replace(/\n/g, ' | '));
@@ -47,12 +47,12 @@ async function novaStranka(ctx) {
   const page = await novaStranka(ctx);
   await page.goto(BASE, { waitUntil: 'networkidle' });
   await page.waitForTimeout(900);
-  await page.hover('[aria-label^="Hrad —"]');
+  await page.hover('[aria-label^="Castle —"]');
   await page.waitForTimeout(400);
-  const karta = mezery(await page.innerText('[aria-label="Podrobnosti sféry Hrad"]'));
-  tvrd('2a: kartuše ukazuje vloženo 80 000', karta.includes('80 000'));
-  tvrd('2b: kartuše ukazuje, kolik chybí do další úrovně', /chybí/.test(karta));
-  tvrd('2c: kartuše jmenuje další úroveň', karta.includes('Opevněný dvorec'));
+  const karta = mezery(await page.innerText('[aria-label="Castle details"]'));
+  tvrd('2a: kartuše ukazuje vloženo 80 000', karta.includes('80,000'));
+  tvrd('2b: kartuše ukazuje, kolik chybí do další úrovně', /short of/.test(karta));
+  tvrd('2c: kartuše jmenuje další úroveň', karta.includes('Fortified Manor'));
   await ctx.close();
 }
 
@@ -65,25 +65,25 @@ async function novaStranka(ctx) {
 
   await page.selectOption('select', 'vwce'); // Hradby — VWCE
   await page.fill('input[type="number"] >> nth=0', '40000');
-  await page.click('button:has-text("Zapsat do účtů")');
+  await page.click('button:has-text("Enter in the books")');
   await page.waitForTimeout(600);
 
-  await page.click('a:has-text("Zpět na mapu")');
+  await page.click('a:has-text("Back to the map")');
   await page.waitForTimeout(1600);
 
   const toast = await page.$('[role="status"]');
   const toastText = mezery(toast ? await toast.innerText() : '');
-  tvrd('3a: vklad 40 000 do Hradeb spustí level-up', /HRADBY POV/i.test(toastText), toastText.replace(/\n/g, ' '));
-  tvrd('3b: nová úroveň je Nízká zeď', /Nízká zeď/.test(toastText));
+  tvrd('3a: vklad 40 000 do Hradeb spustí level-up', /THE WALLS RISE/i.test(toastText), toastText.replace(/\n/g, ' '));
+  tvrd('3b: nová úroveň je Nízká zeď', /Low Wall/.test(toastText));
 
   const popis = await page.getAttribute('svg[role="img"]', 'aria-label');
-  tvrd('3c: scéna se změnila', popis.includes('Hradby: Nízká zeď'));
+  tvrd('3c: scéna se změnila', popis.includes('Walls: Low Wall'));
 
   await page.goto(`${BASE}#/kronika`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
   const kronika = mezery(await page.innerText('section[aria-labelledby="sekce-7"]'));
-  tvrd('3d: do Kroniky přibyl řádek o vkladu', /Na stavbu hradeb vydáno/.test(kronika));
-  tvrd('3e: do Kroniky přibyl řádek o povýšení', /Hradby povýšeny — Nízká zeď/.test(kronika));
+  tvrd('3d: do Kroniky přibyl řádek o vkladu', /spent on the building of the walls/.test(kronika));
+  tvrd('3e: do Kroniky přibyl řádek o povýšení', /The Walls rise — Low Wall/.test(kronika));
 
   // reload — level-up se nesmí přehrát znovu
   await page.goto(BASE, { waitUntil: 'networkidle' });
@@ -91,7 +91,7 @@ async function novaStranka(ctx) {
   const toast2 = await page.$('[role="status"]');
   tvrd('4a: po reloadu se level-up nepřehraje znovu', toast2 === null);
   const popis2 = await page.getAttribute('svg[role="img"]', 'aria-label');
-  tvrd('4b: stav přežil reload', popis2.includes('Hradby: Nízká zeď'));
+  tvrd('4b: stav přežil reload', popis2.includes('Walls: Low Wall'));
   await ctx.close();
 }
 
@@ -104,14 +104,14 @@ async function novaStranka(ctx) {
 
   await page.selectOption('select', 'xdwt'); // Horda — XDWT
   await page.fill('input[type="number"] >> nth=0', '25000');
-  await page.click('button:has-text("Zapsat do účtů")');
+  await page.click('button:has-text("Enter in the books")');
   await page.waitForTimeout(400);
 
   const pred = await page.evaluate(() => localStorage.getItem('rise.v1'));
 
-  await page.click('button:has-text("Vymazat vše")');
-  await page.click('button:has-text("Ano, pokračovat")');
-  await page.click('button:has-text("Vymazat nenávratně")');
+  await page.click('button:has-text("Erase everything")');
+  await page.click('button:has-text("Yes, continue")');
+  await page.click('button:has-text("Erase permanently")');
   await page.waitForTimeout(400);
   const po = await page.evaluate(() => localStorage.getItem('rise.v1'));
   tvrd('5a: vymazání skutečně vrátí výchozí stav', pred !== po);
@@ -139,11 +139,11 @@ async function novaStranka(ctx) {
   await page.route('**frankfurter**', (r) => r.abort());
   await page.goto(`${BASE}#/kronika`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  await page.click('button:has-text("Načíst ceny")');
+  await page.click('button:has-text("Fetch prices")');
   await page.waitForTimeout(3000);
   const zprava = mezery(await page.innerText('section[aria-labelledby="sekce-4"]'));
   tvrd('7a: výpadek sítě appku neshodí', await page.$('svg, table') !== null);
-  tvrd('7b: neúspěch se hlásí jako stav, ne jako pád', /nenačteno|nepodařilo/.test(zprava), zprava.slice(0, 120).replace(/\n/g, ' '));
+  tvrd('7b: neúspěch se hlásí jako stav, ne jako pád', /not fetched|could not be fetched/.test(zprava), zprava.slice(0, 120).replace(/\n/g, ' '));
   await ctx.close();
 }
 
@@ -167,11 +167,10 @@ async function novaStranka(ctx) {
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await novaStranka(ctx);
-  // \b je v JS ASCII-only, takže „NÁKUP" by se chytilo jako „KUP" — hranice
-  // se proto hlídají přes \p{L}. „Nákup" a „nákupní cena" jsou účetní pojmy,
-  // ne rada; hledají se rozkazovací a doporučovací tvary.
+  // Hranice slova se hlídají přes \p{L}, ne přes \b (to je v JS ASCII-only).
+  // Účetní pojmy jako „avg. cost" jsou v pořádku; hledají se pokyny a rady.
   const zakazane =
-    /(?<!\p{L})(kup|kupte|kupuj|kupovat|koupit|prodej|prodejte|prodat|doporučujeme|doporučeno|vyplatí se|nevyplatí se)(?!\p{L})/iu;
+    /(?<!\p{L})(buy|sell|should buy|should sell|we recommend|recommended|worth buying|worth selling)(?!\p{L})/iu;
   for (const cesta of ['', '#/kronika']) {
     await page.goto(`${BASE}${cesta}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(800);

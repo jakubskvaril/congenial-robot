@@ -7,27 +7,27 @@ import {
 import { NAZVY_SFER, type OceneniPortfolia } from '../domain/valuation';
 
 /**
- * Přístupnostní ekvivalent mapy: obsahuje všechna data, která scéna vizualizuje.
- * Vodorovné linky jako v ručně linkované knize — žádné boxy ani stíny.
+ * The accessible equivalent of the map: it carries every figure the scene
+ * visualises. Horizontal rules like a hand-ruled ledger — no boxes, no shadows.
  */
 export function Ledger({ portfolio }: { portfolio: OceneniPortfolia }) {
   return (
     <table className="ucetni" id="souhrn">
       <caption className="sr-only">
-        Souhrn portfolia po sférách: vloženo, hodnota, zisk a výnos p.a.
+        Portfolio summary by sphere: paid in, value, gain and annualised return.
       </caption>
       <thead>
         <tr>
-          <th scope="col">Sféra</th>
-          <th scope="col">Nástroj</th>
+          <th scope="col">Sphere</th>
+          <th scope="col">Instrument</th>
           <th scope="col" className="cislo">
-            Vloženo
+            Paid in
           </th>
           <th scope="col" className="cislo">
-            Hodnota
+            Value
           </th>
           <th scope="col" className="cislo">
-            Zisk
+            Gain
           </th>
           <th scope="col" className="cislo">
             %
@@ -52,7 +52,7 @@ export function Ledger({ portfolio }: { portfolio: OceneniPortfolia }) {
               <td className="cislo">{prazdna ? '—' : formatCislo(s.vlozeno)}</td>
               <td className="cislo">{prazdna ? '—' : formatCislo(s.hodnota)}</td>
               <td className={`cislo ${barva(s.zisk, prazdna)}`}>
-                {prazdna ? '—' : formatKcSeZnamenkem(s.zisk).replace(' Kč', '')}
+                {prazdna ? '—' : formatKcSeZnamenkem(s.zisk).replace(' CZK', '')}
               </td>
               <td className={`cislo ${barva(s.zisk, prazdna)}`}>
                 {formatProcentaSeZnamenkem(s.ziskPct)}
@@ -63,13 +63,13 @@ export function Ledger({ portfolio }: { portfolio: OceneniPortfolia }) {
         })}
         <tr className="soucet">
           <th scope="row" className="font-display text-[13px] tracking-[0.12em]">
-            Celkem
+            Total
           </th>
           <td />
           <td className="cislo">{formatCislo(portfolio.vlozeno)}</td>
           <td className="cislo">{formatCislo(portfolio.hodnota)}</td>
           <td className={`cislo ${barva(portfolio.zisk, portfolio.vlozeno === 0)}`}>
-            {formatKcSeZnamenkem(portfolio.zisk).replace(' Kč', '')}
+            {formatKcSeZnamenkem(portfolio.zisk).replace(' CZK', '')}
           </td>
           <td className={`cislo ${barva(portfolio.zisk, portfolio.vlozeno === 0)}`}>
             {formatProcentaSeZnamenkem(portfolio.ziskPct)}
@@ -86,7 +86,7 @@ function barva(zisk: number, prazdna: boolean): string {
   return zisk > 0 ? 'zisk' : 'ztrata';
 }
 
-/** Mobilní podoba téže tabulky — každá sféra jako karta bez rámečku. */
+/** The same table on mobile — one card per sphere, still without a frame. */
 export function LedgerKarty({ portfolio }: { portfolio: OceneniPortfolia }) {
   return (
     <div>
@@ -98,17 +98,17 @@ export function LedgerKarty({ portfolio }: { portfolio: OceneniPortfolia }) {
             <div className="flex items-baseline justify-between">
               <h3 className="font-display text-[14px]">{NAZVY_SFER[sferaId]}</h3>
               <span className="cislo text-[17px]">
-                {prazdna ? '—' : `${formatCislo(s.hodnota)} Kč`}
+                {prazdna ? '—' : `${formatCislo(s.hodnota)} CZK`}
               </span>
             </div>
             <div className="mt-1 flex flex-wrap gap-x-4 text-[14px] opacity-80">
               <span>
-                vloženo <span className="cislo">{prazdna ? '—' : formatCislo(s.vlozeno)}</span>
+                paid in <span className="cislo">{prazdna ? '—' : formatCislo(s.vlozeno)}</span>
               </span>
               <span className={barva(s.zisk, prazdna)}>
-                zisk{' '}
+                gain{' '}
                 <span className="cislo">
-                  {prazdna ? '—' : formatKcSeZnamenkem(s.zisk).replace(' Kč', '')}
+                  {prazdna ? '—' : formatKcSeZnamenkem(s.zisk).replace(' CZK', '')}
                 </span>{' '}
                 <span className="cislo">({formatProcentaSeZnamenkem(s.ziskPct)})</span>
               </span>
@@ -120,8 +120,8 @@ export function LedgerKarty({ portfolio }: { portfolio: OceneniPortfolia }) {
         );
       })}
       <div className="flex items-baseline justify-between border-t-[1.8px] border-[var(--inkoust)] pt-3">
-        <h3 className="font-display text-[14px] tracking-[0.12em]">Celkem</h3>
-        <span className="cislo text-[19px]">{formatCislo(portfolio.hodnota)} Kč</span>
+        <h3 className="font-display text-[14px] tracking-[0.12em]">Total</h3>
+        <span className="cislo text-[19px]">{formatCislo(portfolio.hodnota)} CZK</span>
       </div>
     </div>
   );

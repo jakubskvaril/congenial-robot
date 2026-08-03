@@ -76,9 +76,9 @@ describe('export a import', () => {
 
   it('CSV escapuje čárky a uvozovky v názvu', () => {
     const s: Stav = vychoziStav();
-    s.aktiva[0]!.nazev = 'Fond "A", třída B';
+    s.aktiva[0]!.nazev = 'Fund "A", class B';
     const csv = exportCsv(s);
-    expect(csv).toContain('"Fond ""A"", třída B"');
+    expect(csv).toContain('"Fund ""A"", class B"');
   });
 });
 
@@ -89,8 +89,10 @@ describe('kronika', () => {
         id: 'k1',
         datum: '2026-07-31',
         typ: 'vklad',
-        text: 'Do pokladny hradu uloženo 80 000 Kč.',
+        text: '80,000 CZK laid in the castle treasury.',
       }),
-    ).toBe('Léta Páně 2026, 31. dne července — Do pokladny hradu uloženo 80 000 Kč.');
+    ).toBe(
+      'In the year of our Lord 2026, on the 31st day of July — 80,000 CZK laid in the castle treasury.',
+    );
   });
 });

@@ -95,7 +95,7 @@ export default function Mapa() {
         </>
       )}
 
-      <section aria-label="Souhrn portfolia" className="mx-auto mt-6 max-w-[1080px] px-1 sm:px-4">
+      <section aria-label="Portfolio summary" className="mx-auto mt-6 max-w-[1080px] px-1 sm:px-4">
         <div className="hidden sm:block">
           <Ledger portfolio={portfolio} />
         </div>
@@ -105,7 +105,7 @@ export default function Mapa() {
 
         <p className="mt-6 text-right text-[15px]">
           <a href="#/kronika" className="underline underline-offset-4">
-            Kronika a správa →
+            Chronicle &amp; ledger →
           </a>
         </p>
       </section>

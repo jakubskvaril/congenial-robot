@@ -21,7 +21,7 @@ export function DataSekce() {
   async function nactiSoubor(soubor: File) {
     const text = await soubor.text();
     const v = importJson(text);
-    setZprava(v.ok ? 'Stav obnoven ze zálohy.' : `Import selhal — ${v.chyba}`);
+    setZprava(v.ok ? 'State restored from the backup.' : `Import failed — ${v.chyba}`);
     if (vstup.current) vstup.current.value = '';
   }
 
@@ -33,7 +33,7 @@ export function DataSekce() {
           className="tlacitko"
           onClick={() => {
             stahni(exportJson(stav), `rise-${dnesIso()}.json`, 'application/json');
-            setZprava('Záloha JSON stažena.');
+            setZprava('JSON backup downloaded.');
           }}
         >
           Export JSON
@@ -62,7 +62,7 @@ export function DataSekce() {
           className="tlacitko"
           onClick={() => {
             stahni(exportCsv(stav), `rise-vklady-${dnesIso()}.csv`, 'text/csv');
-            setZprava('CSV s vklady staženo.');
+            setZprava('CSV of contributions downloaded.');
           }}
         >
           Export CSV
@@ -74,26 +74,26 @@ export function DataSekce() {
       </p>
 
       <div className="mt-10 border-t-[1.8px] border-[var(--inkoust)] pt-5">
-        <h3 className="popisek mb-2">Vymazat vše</h3>
+        <h3 className="popisek mb-2">Erase everything</h3>
         <p className="mb-4 max-w-[62ch] text-[14px] opacity-70">
-          Smaže uložený stav a vrátí aplikaci do výchozího nastavení. Zálohu si udělej předem —
-          zpět to nejde.
+          Deletes the saved state and returns the app to its defaults. Take a backup first —
+          there is no way back.
         </p>
 
         {mazani === 0 && (
           <button type="button" className="tlacitko tlacitko-varovne" onClick={() => setMazani(1)}>
-            Vymazat vše
+            Erase everything
           </button>
         )}
 
         {mazani === 1 && (
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[15px]">Opravdu smazat celý uložený stav?</span>
+            <span className="text-[15px]">Erase the entire saved state?</span>
             <button type="button" className="tlacitko tlacitko-varovne" onClick={() => setMazani(2)}>
-              Ano, pokračovat
+              Yes, continue
             </button>
             <button type="button" className="tlacitko" onClick={() => setMazani(0)}>
-              Zpět
+              Back
             </button>
           </div>
         )}
@@ -101,7 +101,7 @@ export function DataSekce() {
         {mazani === 2 && (
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-[15px] text-[var(--rumelka)]">
-              Poslední potvrzení. Stav bude nenávratně pryč.
+              Last confirmation. The state will be gone for good.
             </span>
             <button
               type="button"
@@ -109,13 +109,13 @@ export function DataSekce() {
               onClick={() => {
                 vymazVse();
                 setMazani(0);
-                setZprava('Vymazáno. Říše začíná znovu.');
+                setZprava('Erased. The realm begins again.');
               }}
             >
-              Vymazat nenávratně
+              Erase permanently
             </button>
             <button type="button" className="tlacitko" onClick={() => setMazani(0)}>
-              Zpět
+              Back
             </button>
           </div>
         )}

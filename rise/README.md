@@ -1,10 +1,17 @@
-# Říše
+# Realm
 
 Osobní tracker tří investičních pozic převlečený za středověkou mapu. Hrad,
 hradby a horda rostou s tím, jak roste portfolio.
 
 Aplikace ukazuje čísla a data z vlastních zápisů. Nedává daňová ani investiční
 doporučení a nenavrhuje žádné obchodní kroky.
+
+**Jazyk rozhraní je angličtina**, měna zůstává CZK — pozice jsou financované
+v korunách. Kód a komentáře jsou česky; doménový slovník (`vklad`, `castka`,
+`hodnota`) je interní a rozhraní se ho netýká.
+
+Podklady pro art direction jsou v [`docs/design-brief.md`](docs/design-brief.md),
+referenční snímky běžící appky v [`docs/reference/`](docs/reference/).
 
 ## Spuštění
 
@@ -38,7 +45,7 @@ src/
     valuation.ts  hodnota pozice, zisk, váhy, sparkline
     levels.ts     herní progrese, prahy, prosperita, drobnosti
     rules.ts      Zákony říše
-    money.ts      cs-CZ formátování a skloňování
+    money.ts      en-US formátování, řadové číslovky, množné číslo
     datum.ts      datumová aritmetika v UTC
   data/       localStorage `rise.v1`, migrace, export/import, cenové adaptéry
   scene/      inline SVG mapa — Castle, Wall, Horde, Teren, Atmosphere, Ramec

@@ -10,7 +10,7 @@ import {
   formatKcSeZnamenkem,
   formatProcenta,
   formatProcentaSeZnamenkem,
-  sklonuj,
+  plural,
 } from '../domain/money';
 import { NAZVY_SFER, type OceneniAktiva, type OceneniPortfolia } from '../domain/valuation';
 import { Prazdno, Rolovatelne } from './Sekce';
@@ -23,21 +23,21 @@ export function DrzenePozice({ portfolio }: { portfolio: OceneniPortfolia }) {
       <table className="ucetni">
         <thead>
           <tr>
-            <th scope="col">Sféra</th>
-            <th scope="col">Nástroj</th>
+            <th scope="col">Sphere</th>
+            <th scope="col">Instrument</th>
             <th scope="col">ISIN</th>
-            <th scope="col">Měna</th>
-            <th scope="col" className="cislo">Vloženo</th>
-            <th scope="col" className="cislo">Jednotek</th>
-            <th scope="col" className="cislo">Prům. nákup</th>
-            <th scope="col" className="cislo">Akt. cena</th>
-            <th scope="col">Datum ceny</th>
-            <th scope="col" className="cislo">Hodnota</th>
-            <th scope="col" className="cislo">Zisk Kč</th>
-            <th scope="col" className="cislo">Zisk %</th>
+            <th scope="col">Currency</th>
+            <th scope="col" className="cislo">Paid in</th>
+            <th scope="col" className="cislo">Units</th>
+            <th scope="col" className="cislo">Avg. cost</th>
+            <th scope="col" className="cislo">Last price</th>
+            <th scope="col">Price date</th>
+            <th scope="col" className="cislo">Value</th>
+            <th scope="col" className="cislo">Gain CZK</th>
+            <th scope="col" className="cislo">Gain %</th>
             <th scope="col" className="cislo">p.a.</th>
-            <th scope="col" className="cislo">Váha</th>
-            <th scope="col">Časový test</th>
+            <th scope="col" className="cislo">Weight</th>
+            <th scope="col">Holding test</th>
           </tr>
         </thead>
         <tbody>
@@ -78,21 +78,21 @@ function RadekPozice({ o, celek }: { o: OceneniAktiva; celek: number }) {
             {stara && <StitekStari datum={o.aktualniCena.datum} />}
           </>
         ) : a.ocenovani === 'sazba' ? (
-          <span className="opacity-55">režim sazba</span>
+          <span className="opacity-55">rate mode</span>
         ) : (
-          <span className="stitek stitek-cerveny">nenačteno</span>
+          <span className="stitek stitek-cerveny">not fetched</span>
         )}
       </td>
       <td className="cislo">{prazdne ? '—' : formatCislo(o.hodnota)}</td>
       <td className={`cislo ${barva}`}>
-        {prazdne ? '—' : formatKcSeZnamenkem(o.zisk).replace(' Kč', '')}
+        {prazdne ? '—' : formatKcSeZnamenkem(o.zisk).replace(' CZK', '')}
       </td>
       <td className={`cislo ${barva}`}>{formatProcentaSeZnamenkem(o.ziskPct)}</td>
       <td className="cislo">{formatProcentaSeZnamenkem(o.vynosPa)}</td>
       <td className="cislo">{celek > 0 ? formatProcenta(o.hodnota / celek) : '—'}</td>
       <td className="text-[13px]">
         {a.rezimDane === 'penzijni' ? (
-          <span className="opacity-55">jiný režim výplaty</span>
+          <span className="opacity-55">different payout regime</span>
         ) : o.transe.length === 0 ? (
           '—'
         ) : (
@@ -105,13 +105,12 @@ function RadekPozice({ o, celek }: { o: OceneniAktiva; celek: number }) {
 
 function CasovyTest({ o }: { o: OceneniAktiva }) {
   const zrajici = o.transe.filter((t) => (t.dniDoUzrani ?? 0) > 0);
-  if (zrajici.length === 0) return <span className="zisk">uzrálo vše</span>;
+  if (zrajici.length === 0) return <span className="zisk">all matured</span>;
   const nejblizsi = zrajici.reduce((a, b) => ((a.dniDoUzrani ?? 0) <= (b.dniDoUzrani ?? 0) ? a : b));
   return (
     <span>
-      zraje, nejbližší za{' '}
-      <span className="cislo">{nejblizsi.dniDoUzrani}</span>{' '}
-      {sklonuj(nejblizsi.dniDoUzrani ?? 0, 'den', 'dny', 'dní')}
+      maturing, next in <span className="cislo">{nejblizsi.dniDoUzrani}</span>{' '}
+      {plural(nejblizsi.dniDoUzrani ?? 0, 'day', 'days')}
     </span>
   );
 }
@@ -123,7 +122,7 @@ export function StitekStari({ datum }: { datum: string }) {
   if (dni <= 7) return null;
   return (
     <span className={`stitek ml-2 ${dni > 30 ? 'stitek-cerveny' : 'stitek-zluty'}`}>
-      {dni} dní stará
+      {dni} days old
     </span>
   );
 }
@@ -136,23 +135,23 @@ export function HistorieVkladu({ portfolio }: { portfolio: OceneniPortfolia }) {
     .flatMap((o) => o.transe.map((t) => ({ o, t })))
     .sort((a, b) => (a.t.vklad.datum < b.t.vklad.datum ? 1 : -1));
 
-  if (radky.length === 0) return <Prazdno>Zatím žádný zápis. Účty jsou prázdné.</Prazdno>;
+  if (radky.length === 0) return <Prazdno>No entries yet. The books are empty.</Prazdno>;
 
   return (
     <Rolovatelne minSirka={1080}>
       <table className="ucetni">
         <thead>
           <tr>
-            <th scope="col">Datum</th>
-            <th scope="col">Sféra</th>
-            <th scope="col">Nástroj</th>
-            <th scope="col" className="cislo">Částka</th>
-            <th scope="col" className="cislo">Poplatek</th>
-            <th scope="col" className="cislo">Cena za kus</th>
-            <th scope="col" className="cislo">Jednotek</th>
-            <th scope="col">Uzraje</th>
-            <th scope="col">Poznámka</th>
-            <th scope="col"><span className="sr-only">Akce</span></th>
+            <th scope="col">Date</th>
+            <th scope="col">Sphere</th>
+            <th scope="col">Instrument</th>
+            <th scope="col" className="cislo">Amount</th>
+            <th scope="col" className="cislo">Fee</th>
+            <th scope="col" className="cislo">Unit price</th>
+            <th scope="col" className="cislo">Units</th>
+            <th scope="col">Matures</th>
+            <th scope="col">Note</th>
+            <th scope="col"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -192,7 +191,7 @@ function RadekVkladu({
         <td colSpan={10}>
           <div className="flex flex-wrap items-end gap-4 py-2">
             <label className="block w-[160px]">
-              <span className="popisek">Datum</span>
+              <span className="popisek">Date</span>
               <input
                 type="date"
                 className="pole"
@@ -202,7 +201,7 @@ function RadekVkladu({
               />
             </label>
             <label className="block w-[160px]">
-              <span className="popisek">Částka v Kč</span>
+              <span className="popisek">Amount in CZK</span>
               <input
                 type="number"
                 className="pole"
@@ -211,10 +210,10 @@ function RadekVkladu({
               />
             </label>
             <button type="button" className="tlacitko tlacitko-hlavni" onClick={uloz}>
-              Uložit
+              Save
             </button>
             <button type="button" className="tlacitko" onClick={() => setUpravuje(false)}>
-              Zpět
+              Back
             </button>
           </div>
         </td>
@@ -236,31 +235,31 @@ function RadekVkladu({
           <>
             <span className="cislo">{formatDatum(t.uzraje)}</span>
             <span className="ml-2 opacity-60">
-              {t.dniDoUzrani === 0 ? 'uzrálo' : `zraje, ${formatDny(t.dniDoUzrani ?? 0)}`}
+              {t.dniDoUzrani === 0 ? 'matured' : `maturing, ${formatDny(t.dniDoUzrani ?? 0)}`}
             </span>
           </>
         ) : (
-          <span className="opacity-55">jiný režim</span>
+          <span className="opacity-55">other regime</span>
         )}
       </td>
       <td className="max-w-[180px] text-[13px] opacity-70">{t.vklad.poznamka ?? '—'}</td>
       <td className="whitespace-nowrap text-right">
         {mazani ? (
           <span className="inline-flex items-center gap-2">
-            <span className="text-[13px]">Smazat?</span>
+            <span className="text-[13px]">Delete?</span>
             <button
               type="button"
               className="tlacitko tlacitko-varovne !min-h-0 !px-2 !py-1"
               onClick={() => smazVklad(aktivumId, t.vklad.id)}
             >
-              Ano
+              Yes
             </button>
             <button
               type="button"
               className="tlacitko !min-h-0 !px-2 !py-1"
               onClick={() => setMazani(false)}
             >
-              Ne
+              No
             </button>
           </span>
         ) : (
@@ -270,14 +269,14 @@ function RadekVkladu({
               className="tlacitko !min-h-0 !px-2 !py-1"
               onClick={() => setUpravuje(true)}
             >
-              Upravit
+              Edit
             </button>
             <button
               type="button"
               className="tlacitko !min-h-0 !px-2 !py-1"
               onClick={() => setMazani(true)}
             >
-              Smazat
+              Delete
             </button>
           </span>
         )}
@@ -302,7 +301,7 @@ export function NastrojHordy({ portfolio }: { portfolio: OceneniPortfolia }) {
   if (!otevreno) {
     return (
       <button type="button" className="tlacitko" onClick={() => setOtevreno(true)}>
-        Vyměnit nástroj Hordy
+        Swap the Horde instrument
       </button>
     );
   }
@@ -311,7 +310,7 @@ export function NastrojHordy({ portfolio }: { portfolio: OceneniPortfolia }) {
     <div className="mt-4 border-t-[1.8px] border-[var(--inkoust)] pt-4">
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block sm:col-span-2">
-          <span className="popisek">Název</span>
+          <span className="popisek">Name</span>
           <input className="pole" value={nazev} onChange={(e) => setNazev(e.target.value)} />
         </label>
         <label className="block">
@@ -323,7 +322,7 @@ export function NastrojHordy({ portfolio }: { portfolio: OceneniPortfolia }) {
           <input className="pole" value={ticker} onChange={(e) => setTicker(e.target.value)} />
         </label>
         <label className="block">
-          <span className="popisek">Měna</span>
+          <span className="popisek">Currency</span>
           <select
             className="pole"
             value={mena}
@@ -340,7 +339,7 @@ export function NastrojHordy({ portfolio }: { portfolio: OceneniPortfolia }) {
             checked={akumulacni}
             onChange={(e) => setAkumulacni(e.target.checked)}
           />
-          Akumulační třída
+          Accumulating share class
         </label>
       </div>
       <div className="mt-5 flex gap-3">
@@ -358,14 +357,15 @@ export function NastrojHordy({ portfolio }: { portfolio: OceneniPortfolia }) {
             setOtevreno(false);
           }}
         >
-          Uložit nástroj
+          Save instrument
         </button>
         <button type="button" className="tlacitko" onClick={() => setOtevreno(false)}>
-          Zpět
+          Back
         </button>
       </div>
       <p className="mt-3 text-[14px] opacity-60">
-        Vklady i historie cen zůstanou. Když měníš nástroj, zkontroluj i historii cen.
+        Contributions and price history are kept. If you swap the instrument, check the price
+        history too.
       </p>
     </div>
   );

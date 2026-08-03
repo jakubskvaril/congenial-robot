@@ -18,52 +18,52 @@ export default function Kronika() {
     <div className="mx-auto max-w-[1180px] px-4 py-10 sm:px-8">
       <header className="mb-14">
         <a href="#/" className="text-[15px] underline underline-offset-4">
-          ← Zpět na mapu
+          ← Back to the map
         </a>
-        <h1 className="mt-5 text-[30px] sm:text-[38px]">Kronika a správa</h1>
+        <h1 className="mt-5 text-[30px] sm:text-[38px]">Chronicle &amp; ledger</h1>
         <p className="mt-2 max-w-[62ch] text-[16px] opacity-70">
-          Účty říše. Čísla, zápisy a zákony — beze zkratek.
+          The realm's books. Figures, entries and laws — no shortcuts.
         </p>
       </header>
 
-      <Sekce cislo={1} titul="Držené pozice">
+      <Sekce cislo={1} titul="Holdings">
         <DrzenePozice portfolio={portfolio} />
         <div className="mt-6">
           <NastrojHordy portfolio={portfolio} />
         </div>
       </Sekce>
 
-      <Sekce cislo={2} titul="Přidat vklad">
+      <Sekce cislo={2} titul="Add a contribution">
         <PridatVklad aktiva={stav.aktiva} />
       </Sekce>
 
-      <Sekce cislo={3} titul="Historie vkladů">
+      <Sekce cislo={3} titul="Contribution history">
         <HistorieVkladu portfolio={portfolio} />
       </Sekce>
 
       <Sekce
         cislo={4}
-        titul="Ceny a kurzy"
-        popis="Ruční zadání je plnohodnotná cesta. Když načtení selže, drží se poslední známá cena a je to vidět."
+        titul="Prices & rates"
+        popis="Entering a price by hand is a first-class path. If a fetch fails, the last known price stands — and it says so."
       >
         <CenyAKurzy />
       </Sekce>
 
       <Sekce
         cislo={5}
-        titul="Zákony říše"
-        popis="Pravidla, která sis stanovil sám. Aplikace je jen hlídá a hlásí stav."
+        titul="Laws of the Realm"
+        popis="Rules you set for yourself. The app only watches them and reports their state."
       >
         <ZakonyRise zakony={zakony} />
       </Sekce>
 
       {stav.nastaveni.zobrazitProjekce && (
-        <Sekce cislo={6} titul="Projekce">
+        <Sekce cislo={6} titul="Projection">
           <ProjekceSekce portfolio={portfolio} vychoziSazbySfer={vychoziSazby(stav.aktiva)} />
         </Sekce>
       )}
 
-      <Sekce cislo={7} titul="Kronika">
+      <Sekce cislo={7} titul="Chronicle">
         <Letopis udalosti={stav.kronika} />
       </Sekce>
 
@@ -73,8 +73,8 @@ export default function Kronika() {
 
       <footer className="mt-16 border-t-[1.8px] border-[var(--inkoust)] pt-5 text-[14px] opacity-60">
         <p className="max-w-[70ch]">
-          Říše ukazuje čísla a data z tvých vlastních zápisů. Nedává daňová ani investiční
-          doporučení a nenavrhuje žádné obchodní kroky.
+          The Realm shows figures and dates from your own entries. It gives no tax or investment
+          advice and suggests no trading actions.
         </p>
       </footer>
     </div>
@@ -82,7 +82,7 @@ export default function Kronika() {
 }
 
 function Letopis({ udalosti }: { udalosti: readonly Udalost[] }) {
-  if (udalosti.length === 0) return <Prazdno>Kronika je zatím prázdná.</Prazdno>;
+  if (udalosti.length === 0) return <Prazdno>The chronicle is still empty.</Prazdno>;
 
   const serazene = [...udalosti].sort((a, b) => (a.datum < b.datum ? 1 : -1));
 

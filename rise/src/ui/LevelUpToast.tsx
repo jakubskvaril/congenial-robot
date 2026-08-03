@@ -3,12 +3,12 @@ import type { LevelUp } from '../domain/levels';
 import { NAZVY_SFER } from '../domain/valuation';
 
 const SLOVESA: Record<string, string> = {
-  castle: 'HRAD POVÝŠEN',
-  wall: 'HRADBY POVÝŠENY',
-  horde: 'HORDA POVÝŠENA',
+  castle: 'THE CASTLE RISES',
+  wall: 'THE WALLS RISE',
+  horde: 'THE HORDE GROWS',
 };
 
-/** Toast v podobě pečeti: „HRADBY POVÝŠENY — Cimbuří". */
+/** A toast shaped like a wax seal: „THE WALLS RISE — Battlements". */
 export function LevelUpToast({
   levelUp,
   tlumit,
@@ -43,11 +43,11 @@ export function LevelUpToast({
               className="absolute -left-5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border-2 border-[var(--inkoust)] bg-[var(--rumelka)]"
             >
               <span className="flex h-full items-center justify-center font-display text-[16px] font-bold text-[var(--pergamen)]">
-                Ř
+                R
               </span>
             </div>
             <p className="font-display text-[13px] font-semibold tracking-[0.16em]">
-              {SLOVESA[levelUp.sferaId] ?? `${NAZVY_SFER[levelUp.sferaId].toUpperCase()} POVÝŠENY`}
+              {SLOVESA[levelUp.sferaId] ?? NAZVY_SFER[levelUp.sferaId].toUpperCase()}
             </p>
             <p className="mt-1 font-display text-[19px] tracking-[0.06em] text-[var(--zlato)]">
               {levelUp.def.nazev}

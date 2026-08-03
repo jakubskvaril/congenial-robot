@@ -43,7 +43,7 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
       ...(poznamka ? { poznamka } : {}),
     });
 
-    setHlaska(`${NAZVY_SFER[aktivum.sferaId]}: přijato ${formatKc(c)}.`);
+    setHlaska(`${NAZVY_SFER[aktivum.sferaId]}: ${formatKc(c)} received.`);
     setCastka('');
     setPoplatek('');
     setCenaZaKus('');
@@ -53,7 +53,7 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
   return (
     <form onSubmit={odesli} noValidate>
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-        <Pole popisek="Aktivum" chyba={chyby.aktivum} sirka="sm:col-span-2 lg:col-span-1">
+        <Pole popisek="Asset" chyba={chyby.aktivum} sirka="sm:col-span-2 lg:col-span-1">
           <select
             className="pole"
             value={aktivumId}
@@ -68,7 +68,7 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
           </select>
         </Pole>
 
-        <Pole popisek="Datum" chyba={chyby.datum}>
+        <Pole popisek="Date" chyba={chyby.datum}>
           <input
             type="date"
             className="pole"
@@ -79,7 +79,7 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
           />
         </Pole>
 
-        <Pole popisek="Částka v Kč" chyba={chyby.castka}>
+        <Pole popisek="Amount in CZK" chyba={chyby.castka}>
           <input
             type="number"
             inputMode="decimal"
@@ -93,7 +93,7 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
           />
         </Pole>
 
-        <Pole popisek="Poplatek v Kč (nepovinné)" chyba={chyby.poplatek}>
+        <Pole popisek="Fee in CZK (optional)" chyba={chyby.poplatek}>
           <input
             type="number"
             inputMode="decimal"
@@ -108,12 +108,12 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
         </Pole>
 
         <Pole
-          popisek={`Cena za kus${aktivum ? ` v ${aktivum.mena}` : ''} (nepovinné)`}
+          popisek={`Price per unit${aktivum ? ` in ${aktivum.mena}` : ''} (optional)`}
           chyba={chyby.cenaZaKus}
           napoveda={
             aktivum?.ocenovani === 'jednotky'
-              ? 'Když necháš prázdné, dohledá se z historie cen.'
-              : 'V režimu sazba se cena za kus nepoužije.'
+              ? 'Leave it empty and it will be looked up from the price history.'
+              : 'Unit price is not used in rate mode.'
           }
         >
           <input
@@ -130,7 +130,7 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
           />
         </Pole>
 
-        <Pole popisek="Poznámka (nepovinné)">
+        <Pole popisek="Note (optional)">
           <input
             type="text"
             className="pole"
@@ -143,7 +143,7 @@ export function PridatVklad({ aktiva }: { aktiva: readonly Aktivum[] }) {
 
       <div className="mt-7 flex flex-wrap items-center gap-4">
         <button type="submit" className="tlacitko tlacitko-hlavni">
-          Zapsat do účtů
+          Enter in the books
         </button>
         <p aria-live="polite" className="text-[15px] italic">
           {hlaska}
@@ -187,25 +187,25 @@ function zkontroluj(v: {
   cenaZaKus: string;
 }): Chyby {
   const chyby: Chyby = {};
-  if (!v.aktivum) chyby.aktivum = 'Vyber aktivum.';
+  if (!v.aktivum) chyby.aktivum = 'Choose an asset.';
 
-  if (!v.datum) chyby.datum = 'Zadej datum.';
-  else if (v.datum > dnesIso()) chyby.datum = 'Datum nesmí být v budoucnu.';
+  if (!v.datum) chyby.datum = 'Enter a date.';
+  else if (v.datum > dnesIso()) chyby.datum = 'The date cannot be in the future.';
 
   const castka = Number(v.castka.replace(/\s/g, '').replace(',', '.'));
-  if (!v.castka.trim()) chyby.castka = 'Zadej částku.';
-  else if (!Number.isFinite(castka) || castka <= 0) chyby.castka = 'Částka musí být větší než nula.';
+  if (!v.castka.trim()) chyby.castka = 'Enter an amount.';
+  else if (!Number.isFinite(castka) || castka <= 0) chyby.castka = 'The amount must be greater than zero.';
 
   if (v.poplatek.trim()) {
     const poplatek = Number(v.poplatek.replace(',', '.'));
-    if (!Number.isFinite(poplatek) || poplatek < 0) chyby.poplatek = 'Poplatek nesmí být záporný.';
+    if (!Number.isFinite(poplatek) || poplatek < 0) chyby.poplatek = 'The fee cannot be negative.';
     else if (Number.isFinite(castka) && poplatek >= castka)
-      chyby.poplatek = 'Poplatek nesmí být vyšší než částka.';
+      chyby.poplatek = 'The fee cannot exceed the amount.';
   }
 
   if (v.cenaZaKus.trim()) {
     const cena = Number(v.cenaZaKus.replace(',', '.'));
-    if (!Number.isFinite(cena) || cena <= 0) chyby.cenaZaKus = 'Cena musí být větší než nula.';
+    if (!Number.isFinite(cena) || cena <= 0) chyby.cenaZaKus = 'The price must be greater than zero.';
   }
 
   return chyby;

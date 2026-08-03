@@ -21,7 +21,7 @@ export default function App() {
 function Nacitani() {
   return (
     <p className="p-10 font-display text-[13px] tracking-[0.14em]" role="status">
-      OTEVÍRÁM KNIHU…
+      OPENING THE BOOK…
     </p>
   );
 }

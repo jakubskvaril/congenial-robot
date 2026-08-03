@@ -116,7 +116,7 @@ export function Map({
             fill="transparent"
             tabIndex={0}
             role="button"
-            aria-label={`${NAZVY_SFER[s]} — ${urovne[s].def.nazev}. Otevřít podrobnosti.`}
+            aria-label={`${NAZVY_SFER[s]} — ${urovne[s].def.nazev}. Open details.`}
             className="cursor-pointer outline-offset-4"
             onMouseEnter={() => onAktivni(s)}
             onMouseLeave={() => onAktivni(null)}
@@ -189,7 +189,7 @@ function useKamera(cil: SferaId | null, tlumit: boolean): string {
 function popisMapy(p: OceneniPortfolia): string {
   const casti = p.poradi.map((s) => {
     const u = urovenSfery(s, p.sfery[s].hodnota);
-    return `${NAZVY_SFER[s]}: ${u.def.nazev}, ${Math.round(p.sfery[s].hodnota)} Kč`;
+    return `${NAZVY_SFER[s]}: ${u.def.nazev}, ${Math.round(p.sfery[s].hodnota)} CZK`;
   });
-  return `Mapa říše. ${casti.join('. ')}. Úplná data jsou v souhrnné tabulce pod mapou.`;
+  return `Map of the realm. ${casti.join('. ')}. The full figures are in the summary table below the map.`;
 }
