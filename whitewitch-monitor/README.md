@@ -40,6 +40,35 @@ Every e-mail has the cat's name and a clickable direct link. Change e-mails list
 
    The first successful check only records what is listed now (the *baseline*) and sends no e-mails. After that, each check prints a line such as `Check OK: 3 listed, 0 new, 0 changed, 0 removed.` Stop the monitor with Ctrl+C or by closing the window.
 
+## Run it in the cloud with GitHub Actions (no PC needed)
+
+The workflow `.github/workflows/whitewitch-monitor.yml` runs a check every 5 minutes on GitHub's servers. It's free for public repositories.
+
+GitHub's minimum interval is 5 minutes, and scheduled runs often start 5–15 minutes late. A new kitten is therefore usually reported within about 5–20 minutes, not 1 minute.
+
+1. **Merge into the default branch.** The workflow and the `whitewitch-monitor/` folder must be on the repository's default branch, because GitHub runs scheduled workflows only from there.
+2. **Add the e-mail settings as secrets.** Go to *Settings → Secrets and variables → Actions → New repository secret* and add:
+   - required: `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_TO`
+   - optional: `SMTP_PORT`, `SMTP_SECURITY`, `EMAIL_FROM`
+
+   The values are the same as in `.env.example`. Secrets are hidden, even in a public repository.
+3. **Test it.** In the *Actions* tab, choose *White Witch monitor* → *Run workflow*:
+   - `test-email`: you should receive a test e-mail.
+   - `show`: open the run's log to see which cats the parser found.
+   - `check`: runs one check now. The first one records the baseline and sends no e-mails.
+
+After that the checks run on their own.
+
+**State and logs.** State (`state.json`) is kept in the Actions cache between runs. Run logs are public in a public repository, but they contain only the cats' names and links, which are public anyway.
+
+**Failure alerts.** If the site can't be read for about 30 minutes, for example because it blocks GitHub's servers, you get one `MONITOR PROBLEM` e-mail, and another e-mail when it works again.
+
+**Keep-alive.** GitHub pauses scheduled workflows in public repositories after 60 days without commits. The workflow re-enables itself once a week to prevent this.
+
+**Parser settings.** `CONTENT_SELECTOR` and `CAT_LINK_PATTERN` can be set as repository *variables* (same page, *Variables* tab).
+
+**Stopping.** *Actions → White Witch monitor → ⋯ → Disable workflow*.
+
 ## Commands
 
 | Command | What it does |

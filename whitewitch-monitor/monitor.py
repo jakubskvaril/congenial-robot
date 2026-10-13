@@ -76,6 +76,7 @@ class Config:
         self.detail_refresh = max(60, _int(env, "DETAIL_REFRESH_SECONDS", 300))
         self.max_detail_refresh = max(1, _int(env, "MAX_DETAIL_REFRESH_PER_SCAN", 3))
         self.removal_confirmations = max(1, _int(env, "REMOVAL_CONFIRMATIONS", 2))
+        self.alert_after_failures = max(1, _int(env, "ALERT_AFTER_FAILURES", 10))
         self.timeout = max(5, _int(env, "HTTP_TIMEOUT_SECONDS", 20))
         self.state_file = Path(env.get("STATE_FILE", "").strip() or BASE_DIR / "state.json")
         self.content_selector = env.get("CONTENT_SELECTOR", "").strip()
@@ -656,7 +657,7 @@ class Mailer:
 # Notifications
 # --------------------------------------------------------------------------
 
-PRIORITY = {"new": 0, "changed": 1, "removed": 2, "test": 0}
+PRIORITY = {"new": 0, "changed": 1, "removed": 2, "test": 0, "problem": 1, "recovered": 1}
 TEXT_FIELDS = {"listing_text", "description"}
 
 
@@ -746,6 +747,31 @@ def make_notification(kind, cat, changes=None, extra=None):
             "created_at": _now_str(), "priority": PRIORITY[kind], "attempts": 0}
 
 
+def make_status_notification(kind, cfg, failures, error=None):
+    """E-mail saying the monitor itself stopped (or resumed) being able to read the website."""
+    run = ""
+    if os.environ.get("GITHUB_RUN_ID"):
+        run = (f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/"
+               f"{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ['GITHUB_RUN_ID']}")
+    if kind == "problem":
+        subject = f"{SUBJECT_PREFIX} MONITOR PROBLEM: website cannot be checked"
+        lines = ["The monitor could not read the for-sale page.", "",
+                 f"Failed checks in a row: {failures}", f"Last error: {error}",
+                 "New kittens will NOT be detected until this is fixed. You will get another e-mail",
+                 "when checks work again."]
+    else:
+        subject = f"{SUBJECT_PREFIX} MONITOR OK again"
+        lines = ["The monitor can read the for-sale page again.", "",
+                 f"It failed {failures} check(s) in a row before recovering.",
+                 "Any changes made in the meantime are reported in separate e-mails."]
+    lines += [f"Direct link: {cfg.url}", f"Detected at: {_now_str()}"]
+    if run:
+        lines.append(f"Monitor log: {run}")
+    text = "\n".join(lines) + "\n"
+    return {"kind": kind, "cat_id": None, "name": "", "url": cfg.url, "subject": subject, "text": text,
+            "html": _to_html(text), "created_at": _now_str(), "priority": PRIORITY[kind], "attempts": 0}
+
+
 def diff_views(old, new):
     keys = list(dict.fromkeys(list(new) + list(old)))
     return [(k, old.get(k), new.get(k)) for k in keys if old.get(k) != new.get(k)]
@@ -832,6 +858,7 @@ class Monitor:
     def scan(self):
         """One complete scan. Returns the list of queued notifications."""
         current = self.collect()
+        self._note_success()
         stamp = _now_str()
         for cat in current.values():
             cat["last_seen"] = stamp
@@ -915,13 +942,35 @@ class Monitor:
         self.save()
         return sent
 
+    def _note_success(self):
+        failures = self.state.get("consecutive_failures", 0)
+        if failures >= self.cfg.alert_after_failures:
+            self.state["outbox"].append(make_status_notification("recovered", self.cfg, failures))
+        self.state["consecutive_failures"] = 0
+        self.state.pop("last_error", None)
+
+    def note_failure(self, exc):
+        """Count failed checks (cats untouched); e-mail once when they keep failing."""
+        failures = self.state.get("consecutive_failures", 0) + 1
+        self.state["consecutive_failures"] = failures
+        self.state["last_error"] = str(exc)
+        if failures == self.cfg.alert_after_failures:
+            self.state["outbox"].append(make_status_notification("problem", self.cfg, failures, exc))
+        self.save()
+        return failures
+
     def run_once(self):
         ok = True
         try:
             self.scan()
         except ScanError as exc:
             ok = False
-            log.warning("Check failed (nothing changed in saved state): %s", exc)
+            n = self.note_failure(exc)
+            log.warning("Check failed (#%d in a row; cats in saved state untouched): %s", n, exc)
+        except Exception as exc:  # parsing bug etc. - still count it so a stuck monitor gets reported
+            ok = False
+            n = self.note_failure(f"{exc.__class__.__name__}: {exc}")
+            log.exception("Unexpected error during check (#%d in a row)", n)
         self.flush_outbox()
         return ok
 
@@ -938,10 +987,10 @@ class Monitor:
                 self.scan()
                 failures = 0
             except ScanError as exc:
-                failures += 1
-                log.warning("Check failed (#%d in a row; saved state untouched): %s", failures, exc)
-            except Exception:  # never die on an unexpected parsing bug
-                failures += 1
+                failures = self.note_failure(exc)
+                log.warning("Check failed (#%d in a row; cats in saved state untouched): %s", failures, exc)
+            except Exception as exc:  # never die on an unexpected parsing bug
+                failures = self.note_failure(f"{exc.__class__.__name__}: {exc}")
                 log.exception("Unexpected error during check (#%d in a row)", failures)
             try:
                 self.flush_outbox()

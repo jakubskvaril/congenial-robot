@@ -1,0 +1,98 @@
+name: White Witch monitor
+
+# Checks https://whitewitch.cz/en/for-sale/ every 5 minutes (GitHub's minimum; runs can start late
+# when GitHub is busy) and e-mails new / removed / changed cats. Code: whitewitch-monitor/.
+# Scheduled runs only happen from the repository's default branch.
+
+on:
+  schedule:
+    - cron: "3-59/5 * * * *"   # every 5 min, off the busy top of the hour
+    - cron: "17 4 * * 1"       # weekly keep-alive (see last step)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check = scan now, test-email = send a test e-mail, show = print what the parser finds"
+        type: choice
+        options: [check, test-email, show]
+        default: check
+
+permissions:
+  contents: read
+  actions: write   # cache + keep-alive
+
+concurrency:
+  group: whitewitch-monitor
+  cancel-in-progress: false   # never run two checks at once (shared state)
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    defaults:
+      run:
+        working-directory: whitewitch-monitor
+    env:
+      TZ: Europe/Prague
+      STATE_FILE: ${{ github.workspace }}/whitewitch-state/state.json
+      DETAIL_REFRESH_SECONDS: "600"
+      ALERT_AFTER_FAILURES: "6"   # ~30 min of failed checks -> one "MONITOR PROBLEM" e-mail
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_SECURITY: ${{ secrets.SMTP_SECURITY }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      CONTENT_SELECTOR: ${{ vars.CONTENT_SELECTOR }}
+      CAT_LINK_PATTERN: ${{ vars.CAT_LINK_PATTERN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: whitewitch-monitor
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: whitewitch-monitor/requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      # Previous state (known cats + unsent e-mails). The newest cache whose key starts with the prefix wins.
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: whitewitch-state
+          key: whitewitch-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: whitewitch-state-
+
+      - name: Check website
+        if: github.event_name == 'schedule' || inputs.mode == 'check'
+        # A failed check (site down etc.) must not fail the job; the monitor counts failures itself
+        # and e-mails you if they keep happening.
+        run: |
+          mkdir -p "$(dirname "$STATE_FILE")"
+          python monitor.py --once || echo "::warning::Check failed - see log above"
+
+      - name: Send test e-mail
+        if: inputs.mode == 'test-email'
+        run: python monitor.py --test-email
+
+      - name: Show parsed listings
+        if: inputs.mode == 'show'
+        run: python monitor.py --show
+
+      - name: Save state
+        if: always() && hashFiles('whitewitch-state/state.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: whitewitch-state
+          key: whitewitch-state-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # GitHub pauses scheduled workflows in public repos after 60 days without commits;
+      # re-enabling the workflow once a week keeps it alive.
+      - name: Keep schedule alive
+        if: github.event.schedule == '17 4 * * 1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/whitewitch-monitor.yml/enable"

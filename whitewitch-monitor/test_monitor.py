@@ -224,6 +224,21 @@ class MonitorTest(unittest.TestCase):
         self.publish(*self.kittens)
         self.assertEqual(self.run_scan()[1], [])
 
+    def test_repeated_failures_send_one_alert_and_one_recovery(self):
+        self.cfg.alert_after_failures = 3
+        self.baseline()
+        self.fetcher.pages[LIST_URL] = m.ScanError("HTTP 403")
+        subjects = []
+        for _ in range(6):
+            subjects += [s[0] for s in self.run_scan(self.new_monitor())[1]]  # restarts, like GitHub Actions
+        self.assertEqual(subjects, ["[White Witch] MONITOR PROBLEM: website cannot be checked"])
+        self.publish(*self.kittens, kitten("Cleo"))
+        self.mon = self.new_monitor()
+        subjects = [s[0] for s in self.run_scan()[1]]
+        self.assertEqual(subjects, ["[White Witch] NEW CAT: Cleo", "[White Witch] MONITOR OK again"])
+        self.assertEqual(self.run_scan()[1], [])
+        self.assertEqual(len(self.mon.state["cats"]), 3)
+
     def test_no_duplicates_after_restart(self):
         self.baseline()
         self.publish(*self.kittens, kitten("Cleo"))
