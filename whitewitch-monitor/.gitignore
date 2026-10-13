@@ -1,0 +1,13 @@
+# credentials / local configuration
+.env
+# runtime state and logs
+state.json
+state.json.tmp
+state.corrupt-*.json
+monitor.log*
+SCAN_NOW
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
